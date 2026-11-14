@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – Delivery Platform Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="icon">📦</div>
+        <span>Delivery Admin</span>
+      </div>
+
+      <ul class="nav-menu">
+        <li><a href="dashboard.html" class="active"><span class="icon">📊</span> Dashboard</a></li>
+        <li><a href="create.html"><span class="icon">➕</span> Create Delivery</a></li>
+        <li><a href="email.html"><span class="icon">✉️</span> Send Email</a></li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="adminAvatar">A</div>
+          <div>
+            <div class="name" id="adminName">Admin</div>
+            <div class="role" id="adminRole">Administrator</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="logout()">Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+          <div>
+            <h1>Dashboard</h1>
+            <p>Manage all deliveries and track shipments</p>
+          </div>
+        </div>
+        <a href="create.html" class="btn btn-primary" style="width:auto;">
+          + New Delivery
+        </a>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card total">
+          <div class="label">Total Shipments</div>
+          <div class="value" id="statTotal">—</div>
+        </div>
+        <div class="stat-card transit">
+          <div class="label">In Transit</div>
+          <div class="value" id="statTransit">—</div>
+        </div>
+        <div class="stat-card delivered">
+          <div class="label">Delivered</div>
+          <div class="value" id="statDelivered">—</div>
+        </div>
+        <div class="stat-card delayed">
+          <div class="label">Delayed</div>
+          <div class="value" id="statDelayed">—</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-bar">
+        <input type="text" id="searchInput" placeholder="Search tracking #, name, email...">
+        <select id="statusFilter">
+          <option value="">All Statuses</option>
+          <option value="Processing">Processing</option>
+          <option value="Picked Up">Picked Up</option>
+          <option value="Departed">Departed</option>
+          <option value="In Transit">In Transit</option>
+          <option value="Out for Delivery">Out for Delivery</option>
+          <option value="Delivered">Delivered</option>
+          <option value="Delayed">Delayed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+        <select id="modeFilter">
+          <option value="">All Transport Modes</option>
+          <option value="Air">Air</option>
+          <option value="Sea">Sea</option>
+          <option value="Land">Land</option>
+          <option value="Rail">Rail</option>
+          <option value="Express">Express</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadTrackings(1)">Filter</button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Tracking #</th>
+                <th>Product</th>
+                <th>Customer</th>
+                <th>Route</th>
+                <th>Mode</th>
+                <th>Status</th>
+                <th>Progress</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="trackingsTable">
+              <tr>
+                <td colspan="8" style="text-align:center;padding:40px;color:#94a3b8;">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pagination">
+          <span id="pageInfo">—</span>
+          <div class="pagination-btns">
+            <button class="btn btn-secondary btn-sm" id="prevBtn" onclick="changePage(-1)" disabled>Previous</button>
+            <button class="btn btn-secondary btn-sm" id="nextBtn" onclick="changePage(1)" disabled>Next</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <span>Loading...</span>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('Not authenticated');
+
+    // Populate admin info
+    const admin = getAdminUser();
+    if (admin) {
+      document.getElementById('adminName').textContent = admin.name || 'Admin';
+      document.getElementById('adminRole').textContent = admin.role || 'Administrator';
+      document.getElementById('adminAvatar').textContent = (admin.name || 'A').charAt(0).toUpperCase();
+    }
+
+    let currentPage = 1;
+    let totalPages = 1;
+
+    // Socket.IO for live updates
+    const socket = io(SOCKET_URL);
+    socket.on('adminTrackingUpdate', () => {
+      loadTrackings(currentPage);
+      loadStats();
+    });
+
+    async function loadStats() {
+      try {
+        const res = await api.getStats();
+        if (res.success) {
+          document.getElementById('statTotal').textContent = res.data.total;
+          document.getElementById('statTransit').textContent = res.data.inTransit;
+          document.getElementById('statDelivered').textContent = res.data.delivered;
+          document.getElementById('statDelayed').textContent = res.data.delayed;
+        }
+      } catch (err) {
+        console.error('Stats error:', err);
+      }
+    }
+
+    async function loadTrackings(page = 1) {
+      currentPage = page;
+      const search = document.getElementById('searchInput').value.trim();
+      const status = document.getElementById('statusFilter').value;
+      const transportMode = document.getElementById('modeFilter').value;
+
+      const params = { page, limit: 15 };
+      if (search) params.search = search;
+      if (status) params.status = status;
+      if (transportMode) params.transportMode = transportMode;
+
+      try {
+        showLoading(true);
+        const res = await api.getAll(params);
+
+        const tbody = document.getElementById('trackingsTable');
+
+        if (!res.success || res.data.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">
+                  <div class="icon">📭</div>
+                  <h3>No shipments found</h3>
+                  <p>Create your first delivery to get started</p>
+                </div>
+              </td>
+            </tr>`;
+          document.getElementById('pageInfo').textContent = 'No results';
+          document.getElementById('prevBtn').disabled = true;
+          document.getElementById('nextBtn').disabled = true;
+          return;
+        }
+
+        totalPages = res.pages;
+        tbody.innerHTML = res.data.map(t => `
+          <tr>
+            <td><span class="tracking-number">${t.trackingNumber}</span></td>
+            <td>
+              <div class="product-cell">
+                ${t.product.image
+                  ? `<img src="${t.product.image}" class="product-img" alt="">`
+                  : `<div class="product-img placeholder">📦</div>`}
+                <div>
+                  <div style="font-weight:600;font-size:13px;">${escapeHtml(t.product.name)}</div>
+                  <div style="font-size:12px;color:#94a3b8;">${t.product.quantity || '1'} unit(s)</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight:500;">${escapeHtml(t.customer.name)}</div>
+              <div style="font-size:12px;color:#94a3b8;">${escapeHtml(t.customer.email)}</div>
+            </td>
+            <td>
+              <div style="font-size:13px;">${escapeHtml(t.origin.name)}</div>
+              <div style="font-size:12px;color:#94a3b8;">→ ${escapeHtml(t.destination.name)}</div>
+            </td>
+            <td>
+              <span title="${t.transportMode}">${getTransportIcon(t.transportMode)} ${t.transportMode}</span>
+            </td>
+            <td>
+              <span class="status-badge ${getStatusClass(t.status)}">${t.status}</span>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;min-width:60px;">
+                  <div style="width:${t.progressPercentage}%;height:100%;background:var(--primary);border-radius:3px;"></div>
+                </div>
+                <span style="font-size:12px;font-weight:600;color:#64748b;">${t.progressPercentage}%</span>
+              </div>
+            </td>
+            <td>
+              <div class="actions">
+                <button class="btn-icon edit" title="Edit" onclick="location.href='edit.html?tn=${t.trackingNumber}'">✏️</button>
+                <button class="btn-icon delete" title="Delete" onclick="confirmDelete('${t.trackingNumber}')">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+
+        document.getElementById('pageInfo').textContent = `Page ${res.page} of ${res.pages} (${res.total} total)`;
+        document.getElementById('prevBtn').disabled = res.page <= 1;
+        document.getElementById('nextBtn').disabled = res.page >= res.pages;
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function changePage(delta) {
+      const next = currentPage + delta;
+      if (next >= 1 && next <= totalPages) {
+        loadTrackings(next);
+      }
+    }
+
+    async function confirmDelete(trackingNumber) {
+      if (!confirm(`Are you sure you want to delete tracking ${trackingNumber}?`)) return;
+
+      try {
+        showLoading(true);
+        await api.delete(trackingNumber);
+        showToast('Tracking deleted successfully');
+        loadTrackings(currentPage);
+        loadStats();
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showToast(message, isError = false) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (isError ? ' error' : '');
+      toast.innerHTML = `<span>${isError ? '❌' : '✅'}</span> <span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    function showLoading(show) {
+      document.getElementById('loadingOverlay').classList.toggle('show', show);
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Search on Enter
+    document.getElementById('searchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadTrackings(1);
+    });
+
+    // Initial load
+    loadStats();
+    loadTrackings(1);
+  </script>
+</body>
+</html>

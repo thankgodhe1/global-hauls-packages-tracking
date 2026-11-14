@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Delivery – Delivery Platform Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="icon">📦</div>
+        <span>Delivery Admin</span>
+      </div>
+      <ul class="nav-menu">
+        <li><a href="dashboard.html"><span class="icon">📊</span> Dashboard</a></li>
+        <li><a href="create.html" class="active"><span class="icon">➕</span> Create Delivery</a></li>
+        <li><a href="email.html"><span class="icon">✉️</span> Send Email</a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="adminAvatar">A</div>
+          <div>
+            <div class="name" id="adminName">Admin</div>
+            <div class="role" id="adminRole">Administrator</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="logout()">Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+          <div>
+            <h1>Create New Delivery</h1>
+            <p>Fill in the details to create a new shipment</p>
+          </div>
+        </div>
+        <a href="dashboard.html" class="btn btn-secondary" style="width:auto;">← Back to Dashboard</a>
+      </div>
+
+      <div class="form-card">
+        <form id="createForm" enctype="multipart/form-data">
+          <!-- Customer -->
+          <div class="form-section">
+            <h2>Customer Information</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="customerName">Full Name *</label>
+                <input type="text" id="customerName" name="customerName" required placeholder="John Davis">
+              </div>
+              <div class="form-group">
+                <label for="customerEmail">Email *</label>
+                <input type="email" id="customerEmail" name="customerEmail" required placeholder="john@example.com">
+              </div>
+              <div class="form-group">
+                <label for="customerPhone">Phone *</label>
+                <input type="tel" id="customerPhone" name="customerPhone" required placeholder="+1 555 0100">
+              </div>
+            </div>
+          </div>
+
+          <!-- Product -->
+          <div class="form-section">
+            <h2>Product / Package</h2>
+            <div class="form-grid">
+              <div class="form-group full">
+                <label for="productName">Product Name *</label>
+                <input type="text" id="productName" name="productName" required placeholder="Nike Air Max">
+              </div>
+              <div class="form-group">
+                <label for="productQuantity">Quantity</label>
+                <input type="text" id="productQuantity" name="productQuantity" placeholder="1" value="1">
+              </div>
+              <div class="form-group">
+                <label for="productWeight">Weight</label>
+                <input type="text" id="productWeight" name="productWeight" placeholder="1.2 kg">
+              </div>
+              <div class="form-group">
+                <label for="productWidth">Width</label>
+                <input type="text" id="productWidth" name="productWidth" placeholder="30 cm">
+              </div>
+              <div class="form-group">
+                <label for="productHeight">Height</label>
+                <input type="text" id="productHeight" name="productHeight" placeholder="15 cm">
+              </div>
+              <div class="form-group">
+                <label for="productLength">Length</label>
+                <input type="text" id="productLength" name="productLength" placeholder="40 cm">
+              </div>
+              <div class="form-group full">
+                <label for="productDescription">Description</label>
+                <textarea id="productDescription" name="productDescription" placeholder="Optional product description"></textarea>
+              </div>
+              <div class="form-group full">
+                <label>Product Image</label>
+                <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('productImage').click()">
+                  <input type="file" id="productImage" name="productImage" accept="image/*">
+                  <div id="imagePreviewContainer">
+                    <div class="image-upload-text">
+                      <strong>Click to upload</strong> or drag and drop<br>
+                      <span style="font-size:12px;">PNG, JPG, WEBP up to 5MB</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Locations -->
+          <div class="form-section">
+            <h2>Locations</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="origin">Origin *</label>
+                <input type="text" id="origin" name="origin" required placeholder="New York, USA">
+              </div>
+              <div class="form-group">
+                <label for="originCountry">Origin Country</label>
+                <input type="text" id="originCountry" name="originCountry" placeholder="USA">
+              </div>
+              <div class="form-group">
+                <label for="destination">Destination *</label>
+                <input type="text" id="destination" name="destination" required placeholder="London, UK">
+              </div>
+              <div class="form-group">
+                <label for="destinationCountry">Destination Country</label>
+                <input type="text" id="destinationCountry" name="destinationCountry" placeholder="UK">
+              </div>
+              <div class="form-group full">
+                <label for="currentLocation">Current Location</label>
+                <input type="text" id="currentLocation" name="currentLocation" placeholder="Defaults to Origin if empty">
+              </div>
+            </div>
+          </div>
+
+          <!-- Transport & Status -->
+          <div class="form-section">
+            <h2>Transport Mode & Status</h2>
+            <div class="form-group">
+              <label>Transport Mode *</label>
+              <div class="transport-options" id="transportOptions">
+                <div class="transport-option selected" data-value="Air">
+                  <div class="icon">✈️</div>
+                  <div class="label">Air</div>
+                </div>
+                <div class="transport-option" data-value="Sea">
+                  <div class="icon">🚢</div>
+                  <div class="label">Sea</div>
+                </div>
+                <div class="transport-option" data-value="Land">
+                  <div class="icon">🚚</div>
+                  <div class="label">Land</div>
+                </div>
+                <div class="transport-option" data-value="Rail">
+                  <div class="icon">🚆</div>
+                  <div class="label">Rail</div>
+                </div>
+                <div class="transport-option" data-value="Express">
+                  <div class="icon">⚡</div>
+                  <div class="label">Express</div>
+                </div>
+              </div>
+              <input type="hidden" id="transportMode" name="transportMode" value="Air">
+            </div>
+
+            <div class="form-grid" style="margin-top:16px;">
+              <div class="form-group">
+                <label for="status">Initial Status</label>
+                <select id="status" name="status">
+                  <option value="Processing">Processing</option>
+                  <option value="Picked Up">Picked Up</option>
+                  <option value="Departed">Departed</option>
+                  <option value="In Transit">In Transit</option>
+                  <option value="Out for Delivery">Out for Delivery</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Delayed">Delayed</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="estimatedDelivery">Estimated Delivery</label>
+                <input type="date" id="estimatedDelivery" name="estimatedDelivery">
+              </div>
+              <div class="form-group full">
+                <label for="adminNotes">Admin Notes</label>
+                <textarea id="adminNotes" name="adminNotes" placeholder="Internal notes (optional)"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <span id="btnText">Create Delivery</span>
+              <span id="btnSpinner" class="spinner" style="display:none;"></span>
+            </button>
+            <a href="dashboard.html" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('Not authenticated');
+
+    const admin = getAdminUser();
+    if (admin) {
+      document.getElementById('adminName').textContent = admin.name || 'Admin';
+      document.getElementById('adminRole').textContent = admin.role || 'Administrator';
+      document.getElementById('adminAvatar').textContent = (admin.name || 'A').charAt(0).toUpperCase();
+    }
+
+    // Transport mode selection
+    document.querySelectorAll('.transport-option').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.transport-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('transportMode').value = el.dataset.value;
+      });
+    });
+
+    // Image preview
+    const imageInput = document.getElementById('productImage');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const uploadArea = document.getElementById('imageUploadArea');
+
+    imageInput.addEventListener('change', () => {
+      const file = imageInput.files[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Image must be under 5MB', true);
+        imageInput.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewContainer.innerHTML = `<img src="${e.target.result}" class="image-preview" alt="Preview">`;
+        uploadArea.classList.add('has-image');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Form submit
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData();
+
+      // Required fields
+      const required = ['customerName', 'customerEmail', 'customerPhone', 'productName', 'origin', 'destination'];
+      for (const field of required) {
+        const val = form[field].value.trim();
+        if (!val) {
+          showToast(`Please fill in ${field}`, true);
+          return;
+        }
+        formData.append(field, val);
+      }
+
+      // Optional fields
+      const optional = [
+        'productQuantity', 'productWeight', 'productWidth', 'productHeight',
+        'productLength', 'productDescription', 'originCountry', 'destinationCountry',
+        'currentLocation', 'status', 'estimatedDelivery', 'adminNotes'
+      ];
+      optional.forEach(f => {
+        if (form[f] && form[f].value) formData.append(f, form[f].value.trim());
+      });
+
+      formData.append('transportMode', document.getElementById('transportMode').value);
+
+      if (imageInput.files[0]) {
+        formData.append('productImage', imageInput.files[0]);
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+      submitBtn.disabled = true;
+      btnText.style.display = 'none';
+      btnSpinner.style.display = 'inline-block';
+
+      try {
+        const res = await api.create(formData);
+        if (res.success) {
+          showToast(`Delivery created! Tracking: ${res.data.trackingNumber}`);
+          setTimeout(() => {
+            window.location.href = `edit.html?tn=${res.data.trackingNumber}`;
+          }, 1200);
+        } else {
+          showToast(res.message || 'Failed to create delivery', true);
+        }
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        submitBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+      }
+    });
+
+    function showToast(message, isError = false) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (isError ? ' error' : '');
+      toast.innerHTML = `<span>${isError ? '❌' : '✅'}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4500);
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

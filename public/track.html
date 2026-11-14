@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tracking Details – Delivery Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/app.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Header -->
+    <header class="track-header">
+      <div class="top-bar">
+        <button class="back-btn" onclick="window.location.href='dashboard.html'" title="Back to dashboard">←</button>
+        <div class="title">Tracking Details</div>
+        <div class="header-right">
+          <button class="icon-btn" style="background:var(--gray-100);color:var(--gray-700);width:36px;height:36px;border-radius:50%;border:none;font-size:15px;cursor:pointer;" title="Share" onclick="shareTracking()">↗</button>
+          <button class="icon-btn" style="background:var(--gray-100);color:var(--gray-700);width:36px;height:36px;border-radius:50%;border:none;font-size:15px;cursor:pointer;" title="More">⋯</button>
+        </div>
+      </div>
+
+      <div class="track-product" id="productHeader">
+        <div class="img-placeholder" id="productImg">📦</div>
+        <div class="info">
+          <div class="tn" id="displayTn">—</div>
+          <div class="name" id="displayProduct">Loading...</div>
+        </div>
+        <span class="badge" id="displayStatus">—</span>
+      </div>
+    </header>
+
+    <!-- Route -->
+    <div class="route-row" id="routeRow">
+      <div class="route-point">
+        <div class="city" id="originCity">—</div>
+        <div class="date" id="originDate">—</div>
+      </div>
+      <div class="route-arrow">→</div>
+      <div class="route-point">
+        <div class="city" id="destCity">—</div>
+        <div class="date" id="destDate">—</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" data-tab="map">Live Map</div>
+      <div class="tab" data-tab="timeline">Timeline</div>
+      <div class="tab" data-tab="details">Details</div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- Loading -->
+    <div class="loading-spinner" id="loadingSpinner">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Tab: Live Map -->
+    <div class="tab-content active" id="tab-map">
+      <!-- Transport mode indicator -->
+      <div class="transport-badge" id="transportBadge" style="display:none;">
+        <span class="icon" id="transportIcon">✈️</span>
+        <span id="transportLabel">Air Freight</span>
+        <span class="live-indicator" id="liveIndicator" style="margin-left:8px;display:none;">
+          <span class="dot"></span> LIVE
+        </span>
+      </div>
+
+      <div class="map-container">
+        <div id="map"></div>
+        <div class="map-controls">
+          <button class="map-ctrl-btn" id="btnFollow" title="Follow current location" onclick="toggleFollow()">📍</button>
+          <button class="map-ctrl-btn" id="btnFit" title="Fit full route" onclick="fitFullRoute()">🗺️</button>
+        </div>
+      </div>
+
+      <div class="map-legend">
+        <span><span class="dot current"></span> Current</span>
+        <span><span class="dot dest"></span> Destination</span>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-card" id="progressCard">
+        <div class="top">
+          <div class="status-label">
+            <span id="progressIcon">✈️</span>
+            <span id="progressStatus">In Transit</span>
+          </div>
+          <div class="percent" id="progressPercent">60%</div>
+        </div>
+        <div class="desc" id="progressDesc">Your package is on its way</div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar" style="width:60%"></div>
+        </div>
+        <div class="stages" id="stages">
+          <div class="stage" data-status="Picked Up">
+            <div class="dot"></div>
+            <div class="label">Picked up</div>
+          </div>
+          <div class="stage" data-status="Departed">
+            <div class="dot"></div>
+            <div class="label">Departed</div>
+          </div>
+          <div class="stage" data-status="In Transit">
+            <div class="dot"></div>
+            <div class="label">In Transit</div>
+          </div>
+          <div class="stage" data-status="Out for Delivery">
+            <div class="dot"></div>
+            <div class="label">Out for Delivery</div>
+          </div>
+          <div class="stage" data-status="Delivered">
+            <div class="dot"></div>
+            <div class="label">Delivered</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Latest Updates -->
+      <div class="updates-card">
+        <h3>
+          Latest Updates
+          <a href="#" onclick="switchTab('timeline'); return false;">View All</a>
+        </h3>
+        <div id="latestUpdates"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Timeline -->
+    <div class="tab-content" id="tab-timeline">
+      <div class="updates-card">
+        <h3>Full Timeline</h3>
+        <div id="fullTimeline"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Details -->
+    <div class="tab-content" id="tab-details">
+      <div class="details-card" id="detailsCard"></div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <div class="nav-item" onclick="window.location.href='dashboard.html'">
+        <span class="icon">🏠</span>
+        <span>Home</span>
+      </div>
+      <div class="nav-item active">
+        <span class="icon">📍</span>
+        <span>Track</span>
+      </div>
+      <div class="nav-item" style="cursor:default;opacity:0.7;">
+        <span class="icon">📤</span>
+        <span>Send</span>
+      </div>
+      <div class="nav-item" style="cursor:default;opacity:0.7;">
+        <span class="icon">📋</span>
+        <span>Shipments</span>
+      </div>
+      <div class="nav-item" style="cursor:default;opacity:0.7;">
+        <span class="icon">☰</span>
+        <span>More</span>
+      </div>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    // ========== STATE ==========
+    let map = null;
+    let currentMarker = null;
+    let destMarker = null;
+    let routeLine = null;
+    let trackingData = null;
+    let socket = null;
+    let followMode = false;
+    let lastCoords = null;
+
+    const params = new URLSearchParams(window.location.search);
+    const trackingNumber = (params.get('tn') || '').toUpperCase().trim();
+
+    // ========== TABS ==========
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + name));
+      if (name === 'map' && map) {
+        setTimeout(() => map.invalidateSize(), 120);
+      }
+    }
+
+    // ========== LOAD ==========
+    async function loadTracking() {
+      if (!trackingNumber) {
+        showError('No tracking number provided.');
+        hideLoading();
+        return;
+      }
+
+      try {
+        const res = await api.getTracking(trackingNumber);
+        if (!res.success || !res.data) {
+          showError(res.message || 'Tracking number not found.');
+          hideLoading();
+          return;
+        }
+        trackingData = res.data;
+        renderAll(trackingData);
+        initMap(trackingData);
+        connectSocket(trackingData.trackingNumber);
+        hideLoading();
+      } catch (err) {
+        showError(err.message || 'Unable to load tracking details.');
+        hideLoading();
+      }
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingSpinner').style.display = 'none';
+    }
+
+    function showError(msg) {
+      const banner = document.getElementById('errorBanner');
+      banner.textContent = msg;
+      banner.classList.add('show');
+    }
+
+    // ========== RENDER ==========
+    function renderAll(t) {
+      const modeCfg = getTransportConfig(t.transportMode);
+
+      // Header
+      document.getElementById('displayTn').textContent = '#' + t.trackingNumber;
+      document.getElementById('displayProduct').textContent = t.product.name || 'Package';
+
+      const statusEl = document.getElementById('displayStatus');
+      statusEl.textContent = t.status;
+      statusEl.className = 'badge ' + getStatusClass(t.status);
+
+      const imgBox = document.getElementById('productImg');
+      if (t.product.image && imgBox) {
+        imgBox.outerHTML = `<img src="${t.product.image}" alt="" style="width:56px;height:56px;border-radius:12px;object-fit:cover;" id="productImg">`;
+      }
+
+      // Route
+      document.getElementById('originCity').textContent = t.origin.name || '—';
+      document.getElementById('destCity').textContent = t.destination.name || '—';
+      document.getElementById('originDate').textContent = t.createdAt ? formatShortDate(t.createdAt) : '—';
+      document.getElementById('destDate').textContent = t.estimatedDelivery ? 'Est. ' + formatShortDate(t.estimatedDelivery) : '—';
+
+      // Transport badge
+      const badge = document.getElementById('transportBadge');
+      badge.style.display = 'inline-flex';
+      document.getElementById('transportIcon').textContent = modeCfg.icon;
+      document.getElementById('transportLabel').textContent = modeCfg.label;
+
+      // Progress
+      const pct = t.progressPercentage ?? STATUS_PROGRESS[t.status] ?? 10;
+      document.getElementById('progressStatus').textContent = t.status;
+      document.getElementById('progressPercent').textContent = pct + '%';
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressIcon').textContent = modeCfg.icon;
+
+      // Color progress by mode
+      const progressCard = document.getElementById('progressCard');
+      progressCard.className = 'progress-card mode-' + (t.transportMode || 'Air');
+
+      const descMap = {
+        'Processing': 'Your package is being prepared for shipment',
+        'Picked Up': 'Package has been picked up from the sender',
+        'Departed': 'Package has left the origin facility',
+        'In Transit': 'Your package is on its way to ' + (t.destination.name || 'destination'),
+        'Out for Delivery': 'Package is out for delivery and will arrive soon',
+        'Delivered': 'Package has been successfully delivered',
+        'Delayed': 'There is a temporary delay with your package',
+        'Cancelled': 'This shipment has been cancelled'
+      };
+      document.getElementById('progressDesc').textContent = descMap[t.status] || 'Tracking your package';
+
+      updateStages(t.status);
+      renderUpdates(t.history || [], 'latestUpdates', 4);
+      renderUpdates(t.history || [], 'fullTimeline', 100);
+      renderDetails(t);
+    }
+
+    function updateStages(status) {
+      const order = ['Picked Up', 'Departed', 'In Transit', 'Out for Delivery', 'Delivered'];
+      let activeIdx = order.indexOf(status);
+      if (status === 'Processing') activeIdx = -1;
+      if (status === 'Delayed') activeIdx = 2;
+      if (status === 'Cancelled') activeIdx = -1;
+
+      document.querySelectorAll('#stages .stage').forEach((stage, i) => {
+        stage.classList.remove('done', 'active');
+        if (i < activeIdx) stage.classList.add('done');
+        else if (i === activeIdx) stage.classList.add('active');
+      });
+    }
+
+    function renderUpdates(history, containerId, limit) {
+      const container = document.getElementById(containerId);
+      if (!history || history.length === 0) {
+        container.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:8px 0;">No updates yet</div>';
+        return;
+      }
+
+      const sorted = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      const items = sorted.slice(0, limit);
+
+      container.innerHTML = items.map(h => `
+        <div class="update-item">
+          <div class="timeline-dot"></div>
+          <div class="content">
+            <div class="title">${escapeHtml(h.status)}${h.note ? ' – ' + escapeHtml(h.note) : ''}</div>
+            <div class="location">${escapeHtml(h.location)}</div>
+            <div class="time">${formatDateTime(h.timestamp)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderDetails(t) {
+      const modeCfg = getTransportConfig(t.transportMode);
+      const card = document.getElementById('detailsCard');
+      card.innerHTML = `
+        <div class="detail-row"><span class="label">Tracking Number</span><span class="value">${t.trackingNumber}</span></div>
+        <div class="detail-row"><span class="label">Product</span><span class="value">${escapeHtml(t.product.name)}</span></div>
+        <div class="detail-row"><span class="label">Quantity</span><span class="value">${t.product.quantity || '1'}</span></div>
+        <div class="detail-row"><span class="label">Weight</span><span class="value">${t.product.weight || '—'}</span></div>
+        <div class="detail-row"><span class="label">Transport Mode</span><span class="value">${modeCfg.icon} ${modeCfg.label}</span></div>
+        <div class="detail-row"><span class="label">Status</span><span class="value">${t.status}</span></div>
+        <div class="detail-row"><span class="label">Progress</span><span class="value">${t.progressPercentage || 0}%</span></div>
+        <div class="detail-row"><span class="label">Origin</span><span class="value">${escapeHtml(t.origin.name)}</span></div>
+        <div class="detail-row"><span class="label">Destination</span><span class="value">${escapeHtml(t.destination.name)}</span></div>
+        <div class="detail-row"><span class="label">Current Location</span><span class="value">${escapeHtml(t.currentLocation.name)}</span></div>
+        <div class="detail-row"><span class="label">Estimated Delivery</span><span class="value">${t.estimatedDelivery ? formatDate(t.estimatedDelivery) : '—'}</span></div>
+        <div class="detail-row"><span class="label">Customer</span><span class="value">${escapeHtml(t.customer.name)}</span></div>
+        <div class="detail-row"><span class="label">Created</span><span class="value">${formatDateTime(t.createdAt)}</span></div>
+        <div class="detail-row"><span class="label">Last Updated</span><span class="value">${formatDateTime(t.updatedAt)}</span></div>
+      `;
+    }
+
+    // ========== MAP ==========
+    function createCurrentIcon(mode) {
+      const cfg = getTransportConfig(mode);
+      return L.divIcon({
+        className: 'custom-marker',
+        html: `<div class="marker-pulse" style="
+          background:${cfg.markerBg};
+          width:32px;height:32px;border-radius:50%;
+          border:3px solid white;
+          box-shadow:0 3px 10px rgba(0,0,0,0.3);
+          display:flex;align-items:center;justify-content:center;
+          font-size:15px;line-height:1;">${cfg.icon}</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
+      });
+    }
+
+    function createDestIcon() {
+      return L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="
+          background:#ef4444;
+          width:18px;height:18px;border-radius:50%;
+          border:3px solid white;
+          box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      });
+    }
+
+    function initMap(t) {
+      const current = t.currentLocation.coordinates || { lat: 0, lon: 0 };
+      const dest = t.destination.coordinates || { lat: 0, lon: 0 };
+      const modeCfg = getTransportConfig(t.transportMode);
+      const hasCoords = (current.lat !== 0 || current.lon !== 0) || (dest.lat !== 0 || dest.lon !== 0);
+
+      if (map) {
+        map.remove();
+        map = null;
+        currentMarker = null;
+        destMarker = null;
+        routeLine = null;
+      }
+
+      map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView(
+        hasCoords ? [(current.lat || dest.lat), (current.lon || dest.lon)] : [20, 0],
+        hasCoords ? 5 : 2
+      );
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18
+      }).addTo(map);
+
+      // Destination
+      if (dest.lat !== 0 || dest.lon !== 0) {
+        destMarker = L.marker([dest.lat, dest.lon], { icon: createDestIcon() })
+          .addTo(map)
+          .bindPopup(`<b>Destination</b><br>${escapeHtml(t.destination.name)}`);
+      }
+
+      // Current
+      if (current.lat !== 0 || current.lon !== 0) {
+        currentMarker = L.marker([current.lat, current.lon], {
+          icon: createCurrentIcon(t.transportMode)
+        })
+          .addTo(map)
+          .bindPopup(`<b>Current Location</b><br>${escapeHtml(t.currentLocation.name)}<br><small>${t.status} · ${modeCfg.label}</small>`)
+          .openPopup();
+
+        lastCoords = { lat: current.lat, lon: current.lon };
+      }
+
+      // Route line with transport-specific style
+      if ((current.lat !== 0 || current.lon !== 0) && (dest.lat !== 0 || dest.lon !== 0)) {
+        const lineOptions = {
+          color: modeCfg.routeColor,
+          weight: modeCfg.routeWeight,
+          opacity: modeCfg.routeOpacity
+        };
+        if (modeCfg.routeDash) {
+          lineOptions.dashArray = modeCfg.routeDash;
+        }
+
+        routeLine = L.polyline(
+          [[current.lat, current.lon], [dest.lat, dest.lon]],
+          lineOptions
+        ).addTo(map);
+
+        map.fitBounds([
+          [current.lat, current.lon],
+          [dest.lat, dest.lon]
+        ], { padding: [50, 50], maxZoom: 8 });
+      }
+    }
+
+    /**
+     * Smoothly update map when location/status changes
+     */
+    function updateMap(t) {
+      if (!map) {
+        initMap(t);
+        return;
+      }
+
+      const current = t.currentLocation.coordinates || { lat: 0, lon: 0 };
+      const dest = t.destination.coordinates || { lat: 0, lon: 0 };
+      const modeCfg = getTransportConfig(t.transportMode);
+
+      // Animate marker to new position
+      if (currentMarker && (current.lat !== 0 || current.lon !== 0)) {
+        // Update icon in case transport mode changed
+        currentMarker.setIcon(createCurrentIcon(t.transportMode));
+        currentMarker.setPopupContent(
+          `<b>Current Location</b><br>${escapeHtml(t.currentLocation.name)}<br><small>${t.status} · ${modeCfg.label}</small>`
+        );
+
+        // Smooth animation
+        animateMarker(currentMarker, [current.lat, current.lon], 1400);
+
+        lastCoords = { lat: current.lat, lon: current.lon };
+
+        if (followMode) {
+          setTimeout(() => {
+            map.panTo([current.lat, current.lon], { animate: true, duration: 1.0 });
+          }, 300);
+        }
+      } else if (!currentMarker && (current.lat !== 0 || current.lon !== 0)) {
+        currentMarker = L.marker([current.lat, current.lon], {
+          icon: createCurrentIcon(t.transportMode)
+        }).addTo(map);
+      }
+
+      // Update route line style and path
+      if (routeLine) {
+        routeLine.setLatLngs([[current.lat, current.lon], [dest.lat, dest.lon]]);
+        routeLine.setStyle({
+          color: modeCfg.routeColor,
+          weight: modeCfg.routeWeight,
+          opacity: modeCfg.routeOpacity,
+          dashArray: modeCfg.routeDash || null
+        });
+      } else if ((current.lat !== 0 || current.lon !== 0) && (dest.lat !== 0 || dest.lon !== 0)) {
+        const lineOptions = {
+          color: modeCfg.routeColor,
+          weight: modeCfg.routeWeight,
+          opacity: modeCfg.routeOpacity
+        };
+        if (modeCfg.routeDash) lineOptions.dashArray = modeCfg.routeDash;
+        routeLine = L.polyline([[current.lat, current.lon], [dest.lat, dest.lon]], lineOptions).addTo(map);
+      }
+    }
+
+    function toggleFollow() {
+      followMode = !followMode;
+      const btn = document.getElementById('btnFollow');
+      btn.classList.toggle('active', followMode);
+      if (followMode && lastCoords) {
+        map.panTo([lastCoords.lat, lastCoords.lon], { animate: true });
+        showToast('Follow mode enabled');
+      } else {
+        showToast('Follow mode disabled');
+      }
+    }
+
+    function fitFullRoute() {
+      if (!trackingData) return;
+      const current = trackingData.currentLocation.coordinates || { lat: 0, lon: 0 };
+      const dest = trackingData.destination.coordinates || { lat: 0, lon: 0 };
+      if ((current.lat !== 0 || current.lon !== 0) && (dest.lat !== 0 || dest.lon !== 0)) {
+        map.fitBounds([
+          [current.lat, current.lon],
+          [dest.lat, dest.lon]
+        ], { padding: [50, 50], maxZoom: 8, animate: true });
+      }
+    }
+
+    // ========== SOCKET.IO ==========
+    function connectSocket(tn) {
+      if (socket) socket.disconnect();
+
+      socket = io(SOCKET_URL);
+
+      socket.on('connect', () => {
+        socket.emit('joinTracking', tn);
+        const live = document.getElementById('liveIndicator');
+        if (live) live.style.display = 'inline-flex';
+      });
+
+      socket.on('disconnect', () => {
+        const live = document.getElementById('liveIndicator');
+        if (live) live.style.display = 'none';
+      });
+
+      socket.on('trackingUpdate', (updated) => {
+        if (updated.trackingNumber === tn) {
+          trackingData = updated;
+          renderAll(updated);
+          updateMap(updated);
+          showToast('📍 Location / status updated live');
+        }
+      });
+    }
+
+    function shareTracking() {
+      const url = window.location.href;
+      if (navigator.share) {
+        navigator.share({
+          title: 'Track my package',
+          text: `Track shipment ${trackingNumber}`,
+          url
+        }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(url).then(() => showToast('Link copied to clipboard'));
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    // ========== INIT ==========
+    loadTracking();
+  </script>
+</body>
+</html>

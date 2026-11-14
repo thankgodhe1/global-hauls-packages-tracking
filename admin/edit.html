@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Tracking – Delivery Platform Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="icon">📦</div>
+        <span>Delivery Admin</span>
+      </div>
+      <ul class="nav-menu">
+        <li><a href="dashboard.html"><span class="icon">📊</span> Dashboard</a></li>
+        <li><a href="create.html"><span class="icon">➕</span> Create Delivery</a></li>
+        <li><a href="email.html"><span class="icon">✉️</span> Send Email</a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="adminAvatar">A</div>
+          <div>
+            <div class="name" id="adminName">Admin</div>
+            <div class="role" id="adminRole">Administrator</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="logout()">Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+          <div>
+            <h1>Edit Tracking</h1>
+            <p id="trackingHeader">Loading...</p>
+          </div>
+        </div>
+        <a href="dashboard.html" class="btn btn-secondary" style="width:auto;">← Back to Dashboard</a>
+      </div>
+
+      <div class="form-card" id="editFormContainer" style="display:none;">
+        <!-- Summary -->
+        <div style="display:flex;gap:20px;align-items:flex-start;margin-bottom:28px;flex-wrap:wrap;">
+          <div id="productImageBox" style="width:80px;height:80px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;flex-shrink:0;">
+            📦
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:20px;font-weight:700;margin-bottom:4px;" id="summaryProduct">—</div>
+            <div style="font-size:14px;color:#64748b;margin-bottom:8px;" id="summaryCustomer">—</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <span class="status-badge" id="summaryStatus">—</span>
+              <span id="summaryMode" style="font-size:13px;">—</span>
+              <span id="summaryProgress" style="font-size:13px;font-weight:600;color:var(--primary);">—</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="editForm">
+          <!-- Status & Location (most important) -->
+          <div class="form-section">
+            <h2>Update Status & Location</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="status">Status *</label>
+                <select id="status" name="status" required>
+                  <option value="Processing">Processing</option>
+                  <option value="Picked Up">Picked Up</option>
+                  <option value="Departed">Departed</option>
+                  <option value="In Transit">In Transit</option>
+                  <option value="Out for Delivery">Out for Delivery</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Delayed">Delayed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="currentLocation">Current Location *</label>
+                <input type="text" id="currentLocation" name="currentLocation" required placeholder="e.g. JFK Airport, New York">
+              </div>
+              <div class="form-group full">
+                <label for="note">Update Note (optional)</label>
+                <input type="text" id="note" name="note" placeholder="e.g. Departed from JFK Airport">
+              </div>
+            </div>
+          </div>
+
+          <!-- Transport Mode -->
+          <div class="form-section">
+            <h2>Transport Mode</h2>
+            <div class="transport-options" id="transportOptions">
+              <div class="transport-option" data-value="Air">
+                <div class="icon">✈️</div>
+                <div class="label">Air</div>
+              </div>
+              <div class="transport-option" data-value="Sea">
+                <div class="icon">🚢</div>
+                <div class="label">Sea</div>
+              </div>
+              <div class="transport-option" data-value="Land">
+                <div class="icon">🚚</div>
+                <div class="label">Land</div>
+              </div>
+              <div class="transport-option" data-value="Rail">
+                <div class="icon">🚆</div>
+                <div class="label">Rail</div>
+              </div>
+              <div class="transport-option" data-value="Express">
+                <div class="icon">⚡</div>
+                <div class="label">Express</div>
+              </div>
+            </div>
+            <input type="hidden" id="transportMode" name="transportMode" value="Air">
+          </div>
+
+          <!-- Other -->
+          <div class="form-section">
+            <h2>Additional Details</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="estimatedDelivery">Estimated Delivery</label>
+                <input type="date" id="estimatedDelivery" name="estimatedDelivery">
+              </div>
+              <div class="form-group full">
+                <label for="adminNotes">Admin Notes</label>
+                <textarea id="adminNotes" name="adminNotes" placeholder="Internal notes"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- History -->
+          <div class="form-section">
+            <h2>Tracking History</h2>
+            <div class="history-list" id="historyList">
+              <!-- filled by JS -->
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <span id="btnText">Save Changes</span>
+              <span id="btnSpinner" class="spinner" style="display:none;"></span>
+            </button>
+            <a href="dashboard.html" class="btn btn-secondary">Cancel</a>
+            <button type="button" class="btn btn-danger" id="deleteBtn" style="margin-left:auto;">Delete Tracking</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <span>Loading...</span>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    if (!requireAuth()) throw new Error('Not authenticated');
+
+    const admin = getAdminUser();
+    if (admin) {
+      document.getElementById('adminName').textContent = admin.name || 'Admin';
+      document.getElementById('adminRole').textContent = admin.role || 'Administrator';
+      document.getElementById('adminAvatar').textContent = (admin.name || 'A').charAt(0).toUpperCase();
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const trackingNumber = params.get('tn');
+
+    if (!trackingNumber) {
+      alert('No tracking number provided');
+      window.location.href = 'dashboard.html';
+    }
+
+    let currentTracking = null;
+
+    // Transport mode UI
+    document.querySelectorAll('.transport-option').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.transport-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('transportMode').value = el.dataset.value;
+      });
+    });
+
+    async function loadTracking() {
+      try {
+        showLoading(true);
+        const res = await api.getOne(trackingNumber);
+
+        if (!res.success || !res.data) {
+          showToast('Tracking not found', true);
+          setTimeout(() => window.location.href = 'dashboard.html', 1500);
+          return;
+        }
+
+        currentTracking = res.data;
+        populateForm(currentTracking);
+        document.getElementById('editFormContainer').style.display = 'block';
+        document.getElementById('trackingHeader').textContent = currentTracking.trackingNumber;
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function populateForm(t) {
+      // Summary
+      document.getElementById('summaryProduct').textContent = t.product.name;
+      document.getElementById('summaryCustomer').textContent = `${t.customer.name} • ${t.customer.email}`;
+      const statusEl = document.getElementById('summaryStatus');
+      statusEl.textContent = t.status;
+      statusEl.className = 'status-badge ' + getStatusClass(t.status);
+      document.getElementById('summaryMode').textContent = `${getTransportIcon(t.transportMode)} ${t.transportMode}`;
+      document.getElementById('summaryProgress').textContent = `${t.progressPercentage}% complete`;
+
+      if (t.product.image) {
+        document.getElementById('productImageBox').innerHTML = `<img src="${t.product.image}" style="width:100%;height:100%;object-fit:cover;">`;
+      }
+
+      // Form fields
+      document.getElementById('status').value = t.status;
+      document.getElementById('currentLocation').value = t.currentLocation.name;
+      document.getElementById('transportMode').value = t.transportMode;
+      document.getElementById('adminNotes').value = t.adminNotes || '';
+
+      if (t.estimatedDelivery) {
+        const d = new Date(t.estimatedDelivery);
+        document.getElementById('estimatedDelivery').value = d.toISOString().split('T')[0];
+      }
+
+      // Select transport mode UI
+      document.querySelectorAll('.transport-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.value === t.transportMode);
+      });
+
+      // History
+      const historyList = document.getElementById('historyList');
+      if (t.history && t.history.length > 0) {
+        const sorted = [...t.history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        historyList.innerHTML = sorted.map(h => `
+          <div class="history-item">
+            <div class="time">${formatDateTime(h.timestamp)}</div>
+            <div class="status">${h.status} — ${escapeHtml(h.location)}</div>
+            ${h.note ? `<div style="color:#64748b;font-size:12px;">${escapeHtml(h.note)}</div>` : ''}
+          </div>
+        `).join('');
+      } else {
+        historyList.innerHTML = '<div style="color:#94a3b8;padding:12px;">No history yet</div>';
+      }
+    }
+
+    // Submit update
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const data = {
+        status: document.getElementById('status').value,
+        currentLocation: document.getElementById('currentLocation').value.trim(),
+        transportMode: document.getElementById('transportMode').value,
+        adminNotes: document.getElementById('adminNotes').value.trim(),
+        note: document.getElementById('note').value.trim()
+      };
+
+      const eta = document.getElementById('estimatedDelivery').value;
+      if (eta) data.estimatedDelivery = eta;
+
+      if (!data.currentLocation) {
+        showToast('Current location is required', true);
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+      submitBtn.disabled = true;
+      btnText.style.display = 'none';
+      btnSpinner.style.display = 'inline-block';
+
+      try {
+        const res = await api.update(trackingNumber, data);
+        if (res.success) {
+          showToast('Tracking updated successfully');
+          currentTracking = res.data;
+          populateForm(currentTracking);
+          document.getElementById('note').value = '';
+        } else {
+          showToast(res.message || 'Update failed', true);
+        }
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        submitBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnSpinner.style.display = 'none';
+      }
+    });
+
+    // Delete
+    document.getElementById('deleteBtn').addEventListener('click', async () => {
+      if (!confirm(`Permanently delete tracking ${trackingNumber}? This cannot be undone.`)) return;
+
+      try {
+        showLoading(true);
+        await api.delete(trackingNumber);
+        showToast('Tracking deleted');
+        setTimeout(() => window.location.href = 'dashboard.html', 1000);
+      } catch (err) {
+        showToast(err.message, true);
+        showLoading(false);
+      }
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showToast(message, isError = false) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (isError ? ' error' : '');
+      toast.innerHTML = `<span>${isError ? '❌' : '✅'}</span> <span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    function showLoading(show) {
+      document.getElementById('loadingOverlay').classList.toggle('show', show);
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Load
+    loadTracking();
+  </script>
+</body>
+</html>

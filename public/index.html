@@ -1,0 +1,2089 @@
+<html lang="en">
+    <head>
+    <style>body {transition: opacity ease-in 0.2s; } 
+body[unresolved] {opacity: 0; display: block; overflow: hidden; position: relative; } 
+</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>66 Global Haul Zone (66GHZ) | Global Package Tracking</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <!-- QR & Barcode -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: #f0f5fe;
+            color: #1a2b4c;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Futuristic Elements */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 35px rgba(0, 20, 60, 0.15);
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 100, 255, 0.3);
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-30px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+        .animate-slideIn { animation: slideIn 0.6s ease-out; }
+        .animate-fadeIn { animation: fadeIn 1s ease-out; }
+        .animate-scaleIn { animation: scaleIn 0.5s ease-out; }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .display-1 {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .display-2 {
+            font-size: clamp(2rem, 6vw, 3rem);
+            font-weight: 600;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-overlay.active { display: flex; }
+
+        .plane-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .plane {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            color: #2a5298;
+            animation: fly 2s ease-in-out infinite;
+        }
+
+        .plane-shadow {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 10px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 50%;
+            filter: blur(4px);
+            animation: shadow 2s ease-in-out infinite;
+        }
+
+        @keyframes fly {
+            0%,100% { transform: translate(-50%,-50%) translateY(0); }
+            50% { transform: translate(-50%,-50%) translateY(-20px); }
+        }
+
+        @keyframes shadow {
+            0%,100% { width: 60px; opacity: 0.2; }
+            50% { width: 80px; opacity: 0.1; }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #2a5298;
+            margin-top: 1rem;
+            letter-spacing: 2px;
+        }
+
+        /* Navigation */
+        nav {
+            padding: 1.5rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 30px rgba(0,20,60,0.1);
+            transition: all 0.3s;
+        }
+
+        nav.scrolled {
+            padding: 1rem 5%;
+            background: rgba(255,255,255,0.95);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e3c72;
+            text-decoration: none;
+            transition: transform 0.3s;
+        }
+
+        .logo:hover { transform: scale(1.05); }
+
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transform: rotate(45deg);
+            transition: all 0.3s;
+        }
+
+        .logo-img i { transform: rotate(-45deg); }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #1e293b;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover { color: #2a5298; }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover::after { width: 100%; }
+
+        .menu-btn {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #1e3c72;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            padding: 8rem 5% 4rem;
+            background: linear-gradient(135deg, #f5f7ff 0%, #e8eeff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><path d="M10 50 Q 30 30, 50 50 T 90 50" stroke="%232a5298" fill="none" stroke-width="1"/><circle cx="50" cy="50" r="2" fill="%232a5298"/></svg>') repeat;
+            pointer-events: none;
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            background: rgba(42, 82, 152, 0.1);
+            color: #2a5298;
+            border-radius: 100px;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(42, 82, 152, 0.2);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .hero h1 { margin-bottom: 1.5rem; animation: slideIn 0.8s ease-out; }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #4a5a72;
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            animation: slideIn 1s ease-out;
+        }
+
+        /* Tracking Card */
+        .tracking-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            border-radius: 32px;
+            box-shadow: 0 20px 40px rgba(42, 82, 152, 0.15);
+            max-width: 700px;
+            margin: 2rem auto;
+            border: 1px solid rgba(255,255,255,0.5);
+            animation: scaleIn 0.6s ease-out 0.2s both;
+        }
+
+        .tracking-form {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .tracking-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 1.2rem 1.5rem;
+            border: 2px solid #e0e7ff;
+            border-radius: 16px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .tracking-input:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 4px rgba(42,82,152,0.1);
+            transform: translateY(-2px);
+        }
+
+        .tracking-btn {
+            padding: 1.2rem 2.5rem;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            font-family: 'Space Grotesk', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tracking-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .tracking-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(42,82,152,0.4);
+        }
+
+        .tracking-btn:hover::before { left: 100%; }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 5%;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            animation: scaleIn 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(42,82,152,0.15);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2a5298;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label { color: #5a6b8c; font-weight: 500; }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 5%;
+            background: white;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .section-title h2 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p { color: #5a6b8c; max-width: 600px; margin: 0 auto; }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-item {
+            padding: 2rem;
+            border-radius: 24px;
+            background: #f8faff;
+            transition: all 0.3s;
+            animation: scaleIn 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .feature-item:nth-child(1) { animation-delay: 0.1s; }
+        .feature-item:nth-child(2) { animation-delay: 0.2s; }
+        .feature-item:nth-child(3) { animation-delay: 0.3s; }
+        .feature-item:nth-child(4) { animation-delay: 0.4s; }
+
+        .feature-item:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(42,82,152,0.1);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .feature-item:hover .feature-icon {
+            transform: rotate(5deg) scale(1.1);
+        }
+
+        /* Package Details */
+        .package-details {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 5%;
+            display: none;
+        }
+
+        .package-details.active {
+            display: block;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Map Container */
+        .map-container {
+            height: 400px;
+            border-radius: 24px;
+            overflow: hidden;
+            margin: 2rem 0;
+            border: 3px solid white;
+            box-shadow: 0 10px 30px rgba(42,82,152,0.2);
+            transition: all 0.3s;
+        }
+
+        .map-container:hover {
+            box-shadow: 0 15px 40px rgba(42,82,152,0.3);
+        }
+
+        /* Custom Map Markers */
+        .custom-div-icon {
+            background: transparent;
+            border: none;
+        }
+
+        .origin-marker {
+            background: #10b981;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #10b981;
+        }
+
+        .dest-marker {
+            background: #ef4444;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #ef4444;
+        }
+
+        .current-marker {
+            background: #3b82f6;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #3b82f6;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Route Info */
+        .route-info {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 24px;
+            margin: 1rem 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .route-point { text-align: center; flex: 1; }
+        .route-label { font-size: 0.85rem; color: #5a6b8c; margin-bottom: 0.3rem; }
+        .route-value { font-weight: 600; color: #1e293b; }
+        .route-arrow { color: #2a5298; font-size: 1.2rem; }
+
+        /* Package Header */
+        .package-header {
+            background: white;
+            border-radius: 32px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .package-header-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        .image-gallery { position: relative; }
+        .main-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .main-image:hover { transform: scale(1.02); }
+
+        .image-thumbnails {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 12px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: all 0.3s;
+        }
+        .thumbnail.active, .thumbnail:hover {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .status-confirmed { background: #dbeafe; color: #1e3c72; }
+        .status-processing { background: #fef3c7; color: #b45309; }
+        .status-shipped { background: #dcfce7; color: #15803d; }
+        .status-transit { background: #fef9c3; color: #a16207; }
+        .status-delivered { background: #dcfce7; color: #15803d; }
+        .status-paused { background: #fee2e2; color: #b91c1c; }
+
+        /* Info Cards */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .info-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(42,82,152,0.1);
+        }
+
+        .info-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: #2a5298;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .info-row:last-child { border-bottom: none; }
+
+        /* Progress Section */
+        .progress-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 32px;
+            margin: 2rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 100px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1e3c72, #2a5298);
+            border-radius: 100px;
+            transition: width 0.5s;
+        }
+        .progress-fill.paused { background: linear-gradient(90deg, #b91c1c, #ef4444); }
+
+        .progress-milestones {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            position: relative;
+        }
+        .milestone {
+            text-align: center;
+            flex: 1;
+        }
+        .milestone-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem;
+            color: #94a3b8;
+            transition: all 0.3s;
+        }
+        .milestone.completed .milestone-icon {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+        .milestone.active .milestone-icon {
+            background: #2a5298;
+            border-color: #2a5298;
+            color: white;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Timeline */
+        .timeline-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 32px;
+            margin: 2rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 2rem;
+            animation: slideIn 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+        .timeline-item:nth-child(1) { animation-delay: 0.1s; }
+        .timeline-item:nth-child(2) { animation-delay: 0.2s; }
+        .timeline-item:nth-child(3) { animation-delay: 0.3s; }
+        .timeline-item:nth-child(4) { animation-delay: 0.4s; }
+        .timeline-item:nth-child(5) { animation-delay: 0.5s; }
+
+        .timeline-dot {
+            position: absolute;
+            left: -2rem;
+            width: 16px;
+            height: 16px;
+            background: #2a5298;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #2a5298;
+        }
+        .timeline-content {
+            background: #f8faff;
+            padding: 1rem;
+            border-radius: 16px;
+            margin-left: 1rem;
+            transition: all 0.3s;
+        }
+        .timeline-content:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(42,82,152,0.1);
+        }
+
+        /* Barcode Section */
+        .barcode-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            background: white;
+            padding: 2rem;
+            border-radius: 32px;
+            margin: 2rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .barcode-container, .qrcode-container { text-align: center; }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        .action-btn {
+            padding: 1rem 2rem;
+            border-radius: 16px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            background: white;
+            color: #1e293b;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .action-btn.pay {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+        }
+        .action-btn.support {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .lightbox.active { display: flex; }
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90vh;
+            position: relative;
+        }
+        .lightbox-image {
+            max-width: 100%;
+            max-height: 90vh;
+            border-radius: 24px;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+        .lightbox-nav:hover { background: rgba(255,255,255,0.2); }
+        .lightbox-prev { left: 20px; }
+        .lightbox-next { right: 20px; }
+
+        /* Testimonials Section */
+        .testimonials {
+            padding: 6rem 5%;
+            background: linear-gradient(135deg, #f5f7ff 0%, #e8eeff 100%);
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .testimonial-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(42,82,152,0.1);
+            transition: all 0.3s;
+            animation: scaleIn 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(42,82,152,0.2);
+        }
+
+        .testimonial-card:nth-child(1) { animation-delay: 0.1s; }
+        .testimonial-card:nth-child(2) { animation-delay: 0.2s; }
+        .testimonial-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .testimonial-text {
+            font-size: 1rem;
+            color: #4a5a72;
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .author-info h4 {
+            color: #1e293b;
+            margin-bottom: 0.2rem;
+        }
+
+        .author-info p {
+            color: #5a6b8c;
+            font-size: 0.85rem;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 6rem 5%;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 50%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .cta-content {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .cta-content h2 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 1rem;
+        }
+
+        .cta-content p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-btn {
+            display: inline-block;
+            padding: 1.2rem 3rem;
+            background: white;
+            color: #1e3c72;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        /* Footer */
+        footer {
+            background: #0f172a;
+            color: white;
+            padding: 4rem 5% 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+        .footer-links li { margin-bottom: 1rem; }
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .footer-links a:hover {
+            color: white;
+            padding-left: 5px;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 3rem;
+            margin-top: 3rem;
+            border-top: 1px solid #334155;
+            color: #94a3b8;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 80px;
+                left: 0;
+                width: 100%;
+                background: white;
+                padding: 2rem;
+                flex-direction: column;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+            .nav-links.active { display: flex; }
+            .menu-btn { display: block; }
+            .tracking-form { flex-direction: column; }
+            .tracking-btn { width: 100%; justify-content: center; }
+            .package-header-grid { grid-template-columns: 1fr; }
+            .barcode-section { grid-template-columns: 1fr; }
+            .action-buttons { flex-direction: column; }
+            .action-btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Plane Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="plane-container">
+            <i class="fas fa-paper-plane plane"></i>
+            <div class="plane-shadow"></div>
+        </div>
+        <div class="loading-text">
+            <span>TRACKING PACKAGE</span>
+            <span class="loading-dots"></span>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" id="lightboxClose">×</button>
+        <div class="lightbox-nav lightbox-prev" id="lightboxPrev"><i class="fas fa-chevron-left"></i></div>
+        <div class="lightbox-nav lightbox-next" id="lightboxNext"><i class="fas fa-chevron-right"></i></div>
+        <div class="lightbox-content">
+            <img class="lightbox-image" id="lightboxImg" src="" alt="">
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar">
+        <a href="#" class="logo">
+            <div class="logo-img">
+                <i class="fas fa-paper-plane"></i>
+            </div>
+            66 GLOBAL HAUL ZONE
+        </a>
+        <div class="menu-btn" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#home" onclick="closeMenu()">Home</a></li>
+            <li><a href="#services" onclick="closeMenu()">Services</a></li>
+            <li><a href="#tracking" onclick="closeMenu()">Tracking</a></li>
+            <li><a href="#testimonials" onclick="closeMenu()">Testimonials</a></li>
+            <li><a href="#contact" onclick="closeMenu()">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <span class="hero-badge">
+                <i class="fas fa-globe"></i> Global Shipping Network
+            </span>
+            <h1 class="display-1">Track Your Package<br>Around The World</h1>
+            <p>Real-time tracking with interactive maps, photo galleries, and instant updates for all your shipments</p>
+            
+            <!-- Tracking Card -->
+            <div class="tracking-card" id="tracking">
+                <form class="tracking-form" id="trackingForm">
+                    <input type="text" class="tracking-input" id="trackingInput" placeholder="Enter tracking number (e.g., ZX912384761)" required="">
+                    <button type="submit" class="tracking-btn" id="trackBtn">
+                        <i class="fas fa-search"></i>
+                        <span id="trackBtnText">Track Package</span>
+                    </button>
+                </form>
+                <div id="trackError" style="display:none;margin-top:1rem;padding:0.85rem 1.2rem;background:#fef2f2;color:#b91c1c;border-radius:12px;font-size:0.95rem;font-weight:500;text-align:center;"></div>
+                <div id="trackSuccess" style="display:none;margin-top:1rem;padding:0.85rem 1.2rem;background:#ecfdf5;color:#047857;border-radius:12px;font-size:0.95rem;font-weight:500;text-align:center;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">150+</div>
+            <div class="stat-label">Countries</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">1M+</div>
+            <div class="stat-label">Packages Delivered</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">24/7</div>
+            <div class="stat-label">Support</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">99.9%</div>
+            <div class="stat-label">Success Rate</div>
+        </div>
+    </div>
+
+    <!-- Package Details -->
+    <div class="package-details" id="packageDetails">
+        <!-- Package Header -->
+        <div class="package-header">
+            <div class="package-header-grid">
+                <div class="image-gallery">
+                    <img class="main-image" id="mainPackageImage" src="" alt="Package" onclick="openLightbox(0)">
+                    <div class="image-thumbnails" id="imageThumbnails"></div>
+                </div>
+                <div>
+                    <h1 class="display-2" id="packageName"></h1>
+                    <p style="color: #5a6b8c; margin: 1rem 0;" id="packageDescription"></p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <span><strong>Tracking:</strong> <span id="trackingNumber"></span></span>
+                        <span><strong>Weight:</strong> <span id="packageWeight"></span> kg</span>
+                        <span><strong>Value:</strong> $<span id="declaredValue"></span></span>
+                    </div>
+                    <div class="status-badge" id="statusBadge"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Route Information -->
+        <div class="route-info" id="routeInfo">
+            <div class="route-point">
+                <div class="route-label">ORIGIN</div>
+                <div class="route-value" id="originCity"></div>
+            </div>
+            <div class="route-arrow"><i class="fas fa-long-arrow-alt-right"></i></div>
+            <div class="route-point">
+                <div class="route-label">DESTINATION</div>
+                <div class="route-value" id="destinationCity"></div>
+            </div>
+            <div class="route-point">
+                <div class="route-label">DISTANCE</div>
+                <div class="route-value" id="distance"></div>
+            </div>
+            <div class="route-point">
+                <div class="route-label">EST. DELIVERY</div>
+                <div class="route-value" id="estimatedDelivery"></div>
+            </div>
+        </div>
+
+        <!-- Interactive Map -->
+        <div class="map-container" id="packageMap"></div>
+
+        <!-- Progress Section -->
+        <div class="progress-section">
+            <h3 style="display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fas fa-chart-line"></i> Delivery Progress</span>
+                <span id="progressPercent">0%</span>
+            </h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-milestones" id="progressMilestones"></div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="info-grid" id="infoGrid"></div>
+
+        <!-- Timeline -->
+        <div class="timeline-section">
+            <h3><i class="fas fa-history"></i> Status History</h3>
+            <div class="timeline" id="timeline"></div>
+        </div>
+
+        <!-- Barcode & QR -->
+        <div class="barcode-section">
+            <div class="barcode-container">
+                <svg id="barcode"></svg>
+                <p style="margin-top: 1rem; font-family: monospace;" id="barcodeText"></p>
+            </div>
+            <div class="qrcode-container">
+                <div id="qrcode"></div>
+                <p style="margin-top: 1rem;">Scan for details</p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons" id="actionButtons"></div>
+    </div>
+
+    <!-- Services Section -->
+    <section class="features" id="services">
+        <div class="section-title">
+            <h2>Premium Shipping Services</h2>
+            <p>Comprehensive logistics solutions for all your shipping needs</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-bolt"></i></div>
+                <h3>Express Delivery</h3>
+                <p>Next-day and same-day delivery options available in major cities</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                <h3>Package Insurance</h3>
+                <p>Full coverage insurance for valuable shipments</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-map-marked-alt"></i></div>
+                <h3>Live Tracking</h3>
+                <p>Real-time GPS tracking with interactive maps</p>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon"><i class="fas fa-headset"></i></div>
+                <h3>24/7 Support</h3>
+                <p>Round-the-clock customer service in multiple languages</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials" id="testimonials">
+        <div class="section-title">
+            <h2>What Our Clients Say</h2>
+            <p>Trusted by thousands of customers worldwide</p>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    "The best tracking system I've ever used. Real-time updates and accurate delivery estimates. Highly recommended!"
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">DR</div>
+                    <div class="author-info">
+                        <h4>Derick Richardson</h4>
+                        <p>CEO, Tech Corp</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    "Outstanding service! My package arrived ahead of schedule and the tracking was spot on every step of the way."
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">JS</div>
+                    <div class="author-info">
+                        <h4>Jane Smith</h4>
+                        <p>Small Business Owner</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    "International shipping made simple. The map feature is incredibly useful for tracking long-distance shipments."
+                </div>
+                <div class="testimonial-author">
+                    <div class="author-avatar">MW</div>
+                    <div class="author-info">
+                        <h4>Mike Wilson</h4>
+                        <p>Frequent Shipper</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Ship?</h2>
+            <p>Join thousands of satisfied customers who trust us with their shipments</p>
+            <a href="#tracking" class="cta-btn">Start Tracking Now</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="footer-grid">
+            <div>
+                <div class="logo" style="color: white; margin-bottom: 1rem;">
+                    <div class="logo-img">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    66 GLOBAL HAUL ZONE (66GHZ)
+                </div>
+                <p style="color: #94a3b8;">Premium global logistics since 2015</p>
+            </div>
+            <ul class="footer-links">
+                <li><h4>Services</h4></li>
+                <li><a href="#">Express Shipping</a></li>
+                <li><a href="#">International Delivery</a></li>
+                <li><a href="#">Package Insurance</a></li>
+                <li><a href="#">Customs Clearance</a></li>
+            </ul>
+            <ul class="footer-links">
+                <li><h4>Company</h4></li>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Careers</a></li>
+                <li><a href="#">Press</a></li>
+                <li><a href="#">Partners</a></li>
+            </ul>
+            <ul class="footer-links">
+                <li><h4>Support</h4></li>
+                <li><a href="#">Help Center</a></li>
+                <li><a href="#">Contact Us</a></li>
+                <li><a href="#">FAQ</a></li>
+                <li><a href="#">Privacy Policy</a></li>
+            </ul>
+        </div>
+        <div class="copyright">
+            © 2026 66 Global Haul Zone (66GHZ). All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // Firebase Configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAve5qJkRx9d20lE8FV4ZvY_zMNARTYq9c",
+  authDomain: "shippingweb1-5c386.firebaseapp.com",
+  projectId: "shippingweb1-5c386",
+  storageBucket: "shippingweb1-5c386.firebasestorage.app",
+  messagingSenderId: "597976312776",
+  appId: "1:597976312776:web:5985bd7abe75de674c2efd",
+  measurementId: "G-SZHR14MEFL"
+};
+
+        // Initialize Firebase
+        let db;
+        try {
+            if (!firebase.apps.length) {
+                // firebase.initializeApp (disabled – using backend API)
+        // firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.firestore();
+            db.enablePersistence().catch(err => console.log('Persistence error:', err));
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+        }
+
+        // Global Variables
+        let map = null;
+        let mapMarker = null;
+        let routeLine = null;
+        let currentPackage = null;
+        let currentImages = [];
+        let currentImageIndex = 0;
+
+        // DOM Elements
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const trackingForm = document.getElementById('trackingForm');
+        const trackingInput = document.getElementById('trackingInput');
+        const packageDetails = document.getElementById('packageDetails');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 100) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Initialize Map with proper location display
+        function initMap(originLat, originLng, destLat, destLng, originName, destName, currentLocation = null) {
+            if (map) {
+                map.remove();
+            }
+            
+            // Center map between origin and destination
+            const centerLat = (originLat + destLat) / 2;
+            const centerLng = (originLng + destLng) / 2;
+            
+            map = L.map('packageMap').setView([centerLat, centerLng], 5);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Clear existing markers and lines
+            if (mapMarker) mapMarker.remove();
+            if (routeLine) routeLine.remove();
+            
+            // Add origin marker
+            L.marker([originLat, originLng], {
+                icon: L.divIcon({
+                    className: 'custom-div-icon',
+                    html: '<div class="origin-marker"></div>',
+                    iconSize: [16, 16]
+                })
+            }).addTo(map).bindPopup(`<b>Origin:</b> ${originName}`);
+            
+            // Add destination marker
+            L.marker([destLat, destLng], {
+                icon: L.divIcon({
+                    className: 'custom-div-icon',
+                    html: '<div class="dest-marker"></div>',
+                    iconSize: [16, 16]
+                })
+            }).addTo(map).bindPopup(`<b>Destination:</b> ${destName}`);
+            
+            // Add current location marker if available and different
+            if (currentLocation && currentPackage?.currentLocation) {
+                getCoordinatesFromLocation(currentPackage.currentLocation).then(coords => {
+                    L.marker([coords.lat, coords.lng], {
+                        icon: L.divIcon({
+                            className: 'custom-div-icon',
+                            html: '<div class="current-marker"></div>',
+                            iconSize: [16, 16]
+                        })
+                    }).addTo(map).bindPopup(`<b>Current Location:</b> ${currentPackage.currentLocation}`);
+                });
+            }
+            
+            // Draw route line
+            routeLine = L.polyline([
+                [originLat, originLng],
+                [destLat, destLng]
+            ], {
+                color: '#2a5298',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '8, 8'
+            }).addTo(map);
+            
+            // Fit bounds to show entire route
+            map.fitBounds([
+                [originLat, originLng],
+                [destLat, destLng]
+            ], { padding: [50, 50] });
+        }
+
+        // Enhanced location to coordinates with more cities
+        async function getCoordinatesFromLocation(location) {
+            const locations = {
+                'New York': { lat: 40.7128, lng: -74.0060 },
+                'Los Angeles': { lat: 34.0522, lng: -118.2437 },
+                'Chicago': { lat: 41.8781, lng: -87.6298 },
+                'Houston': { lat: 29.7604, lng: -95.3698 },
+                'Phoenix': { lat: 33.4484, lng: -112.0740 },
+                'Philadelphia': { lat: 39.9526, lng: -75.1652 },
+                'San Antonio': { lat: 29.4241, lng: -98.4936 },
+                'San Diego': { lat: 32.7157, lng: -117.1611 },
+                'Dallas': { lat: 32.7767, lng: -96.7970 },
+                'San Jose': { lat: 37.3382, lng: -121.8863 },
+                'London': { lat: 51.5074, lng: -0.1278 },
+                'Paris': { lat: 48.8566, lng: 2.3522 },
+                'Tokyo': { lat: 35.6762, lng: 139.6503 },
+                'Sydney': { lat: -33.8688, lng: 151.2093 },
+                'Dubai': { lat: 25.2048, lng: 55.2708 },
+                'Mumbai': { lat: 19.0760, lng: 72.8777 },
+                'Singapore': { lat: 1.3521, lng: 103.8198 },
+                'Hong Kong': { lat: 22.3193, lng: 114.1694 },
+                'Shanghai': { lat: 31.2304, lng: 121.4737 },
+                'Beijing': { lat: 39.9042, lng: 116.4074 },
+                'Moscow': { lat: 55.7558, lng: 37.6173 },
+                'Berlin': { lat: 52.5200, lng: 13.4050 },
+                'Rome': { lat: 41.9028, lng: 12.4964 },
+                'Madrid': { lat: 40.4168, lng: -3.7038 },
+                'Toronto': { lat: 43.6532, lng: -79.3832 },
+                'Mexico City': { lat: 19.4326, lng: -99.1332 },
+                'Sao Paulo': { lat: -23.5505, lng: -46.6333 },
+                'Johannesburg': { lat: -26.2041, lng: 28.0473 }
+            };
+            
+            // Try exact match
+            if (locations[location]) return locations[location];
+            
+            // Try partial match
+            for (const [key, value] of Object.entries(locations)) {
+                if (location.toLowerCase().includes(key.toLowerCase())) {
+                    return value;
+                }
+            }
+            
+            // Default to New York
+            return { lat: 40.7128, lng: -74.0060 };
+        }
+
+        // Calculate distance between two coordinates
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return Math.round(R * c);
+        }
+
+        // Toggle Mobile Menu
+        function toggleMenu() {
+            document.getElementById('navLinks').classList.toggle('active');
+        }
+
+        function closeMenu() {
+            document.getElementById('navLinks').classList.remove('active');
+        }
+
+        // Lightbox Functions
+        function openLightbox(index) {
+            currentImageIndex = index;
+            updateLightboxImage();
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function updateLightboxImage() {
+            if (currentImages && currentImages.length > 0) {
+                lightboxImg.src = currentImages[currentImageIndex];
+            }
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function nextImage() {
+            if (currentImages && currentImages.length > 0) {
+                currentImageIndex = (currentImageIndex + 1) % currentImages.length;
+                updateLightboxImage();
+            }
+        }
+
+        function prevImage() {
+            if (currentImages && currentImages.length > 0) {
+                currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+                updateLightboxImage();
+            }
+        }
+
+        // Lightbox Event Listeners
+        document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+        document.getElementById('lightboxPrev').addEventListener('click', prevImage);
+        document.getElementById('lightboxNext').addEventListener('click', nextImage);
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (lightbox.classList.contains('active')) {
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowLeft') prevImage();
+                if (e.key === 'ArrowRight') nextImage();
+            }
+        });
+
+        // Handle Tracking Form Submission – wired to Delivery Platform backend
+        const API_BASE_URL = (window.API_BASE_URL || 'https://global-haul-backends.onrender.com/api');
+
+        function showTrackError(msg) {
+            const el = document.getElementById('trackError');
+            const ok = document.getElementById('trackSuccess');
+            if (ok) ok.style.display = 'none';
+            if (el) {
+                el.textContent = msg;
+                el.style.display = 'block';
+            } else {
+                alert(msg);
+            }
+        }
+
+        function showTrackSuccess(msg) {
+            const el = document.getElementById('trackSuccess');
+            const err = document.getElementById('trackError');
+            if (err) err.style.display = 'none';
+            if (el) {
+                el.textContent = msg;
+                el.style.display = 'block';
+            }
+        }
+
+        function hideTrackMessages() {
+            const err = document.getElementById('trackError');
+            const ok = document.getElementById('trackSuccess');
+            if (err) err.style.display = 'none';
+            if (ok) ok.style.display = 'none';
+        }
+
+        trackingForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideTrackMessages();
+
+            const trackingNumber = trackingInput.value.trim().toUpperCase();
+
+            if (!trackingNumber) {
+                showTrackError('Please enter a tracking number.');
+                return;
+            }
+
+            const btn = document.getElementById('trackBtn');
+            const btnText = document.getElementById('trackBtnText');
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.textContent = 'Checking...';
+            if (loadingOverlay) loadingOverlay.classList.add('active');
+
+            try {
+                const response = await fetch(API_BASE_URL + '/tracking/lookup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trackingNumber })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Tracking number not found. Please check and try again.');
+                }
+
+                const { current, customer, shipments } = data.data;
+
+                // Save customer session so the dashboard can load
+                sessionStorage.setItem('deliveryUser', JSON.stringify({
+                    name: customer.name,
+                    email: customer.email,
+                    phone: customer.phone || '',
+                    shipments: shipments || [],
+                    lastTracking: current.trackingNumber
+                }));
+
+                showTrackSuccess('Package found! Redirecting to your dashboard...');
+
+                // Redirect to the protected user dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 900);
+
+            } catch (error) {
+                console.error('Tracking error:', error);
+                if (loadingOverlay) loadingOverlay.classList.remove('active');
+                showTrackError(error.message || 'Error retrieving package information. Please try again.');
+            } finally {
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.textContent = 'Track Package';
+                // Keep overlay only on success (while redirecting)
+                if (!sessionStorage.getItem('deliveryUser')) {
+                    if (loadingOverlay) loadingOverlay.classList.remove('active');
+                }
+            }
+        });
+
+        // Display Package Details
+// Display Package Details
+        function displayPackageDetails(pkg) {
+            currentPackage = pkg;
+            
+            // Handle multiple images
+            currentImages = [];
+            if (pkg.pictureLinks && Array.isArray(pkg.pictureLinks)) {
+                currentImages = pkg.pictureLinks.filter(url => url && url.trim() !== '');
+            } else if (pkg.pictureLink) {
+                currentImages = [pkg.pictureLink];
+            } else {
+                currentImages = ['https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=800&q=80'];
+            }
+
+            // Set main image
+            document.getElementById('mainPackageImage').src = currentImages[0];
+            
+            // Generate thumbnails
+            const thumbnailsDiv = document.getElementById('imageThumbnails');
+            thumbnailsDiv.innerHTML = '';
+            currentImages.forEach((img, index) => {
+                const thumb = document.createElement('img');
+                thumb.src = img;
+                thumb.className = 'thumbnail' + (index === 0 ? ' active' : '');
+                thumb.onclick = () => {
+                    document.getElementById('mainPackageImage').src = img;
+                    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+                    thumb.classList.add('active');
+                };
+                thumbnailsDiv.appendChild(thumb);
+            });
+
+            // Basic Info
+            document.getElementById('packageName').textContent = pkg.packageName || 'Untitled Package';
+            document.getElementById('packageDescription').textContent = pkg.packageDescription || 'No description available';
+            document.getElementById('trackingNumber').textContent = pkg.trackingNumber;
+            document.getElementById('packageWeight').textContent = pkg.packageWeight || '0';
+            document.getElementById('declaredValue').textContent = pkg.declaredValue || '0.00';
+
+            // Status Badge
+            const statusBadge = document.getElementById('statusBadge');
+            const statusClass = getStatusClass(pkg.deliveryStatus);
+            statusBadge.className = `status-badge ${statusClass}`;
+            statusBadge.textContent = pkg.deliveryStatus || 'Unknown';
+
+            // Route Info
+            document.getElementById('originCity').textContent = pkg.originCity || 'Unknown';
+            document.getElementById('destinationCity').textContent = pkg.destinationCity || 'Unknown';
+            
+            // Calculate distance if coordinates available
+            if (pkg.originLat && pkg.originLng && pkg.destLat && pkg.destLng) {
+                const distance = calculateDistance(pkg.originLat, pkg.originLng, pkg.destLat, pkg.destLng);
+                document.getElementById('distance').textContent = `${distance.toLocaleString()} km`;
+            } else {
+                document.getElementById('distance').textContent = pkg.distance || 'Unknown';
+            }
+            
+            document.getElementById('estimatedDelivery').textContent = pkg.estimatedDeliveryTime || '3-5 days';
+
+            // Progress
+            const progress = pkg.progressPercent || calculateProgress(pkg.deliveryStatus);
+            document.getElementById('progressPercent').textContent = progress + '%';
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = progress + '%';
+            if (pkg.deliveryStatus === 'Paused') {
+                progressFill.classList.add('paused');
+            }
+
+            // Progress Milestones
+            renderProgressMilestones(pkg.deliveryStatus, progress);
+
+            // Info Grid
+            renderInfoGrid(pkg);
+
+            // Timeline
+            renderTimeline(pkg);
+
+            // Barcode & QR
+            try {
+                JsBarcode("#barcode", pkg.trackingNumber, {
+                    format: "CODE128",
+                    width: 2,
+                    height: 50,
+                    displayValue: false
+                });
+            } catch (e) {
+                console.log('Barcode error:', e);
+            }
+            document.getElementById('barcodeText').textContent = pkg.trackingNumber;
+
+            document.getElementById('qrcode').innerHTML = '';
+            try {
+                QRCode.toCanvas(document.getElementById('qrcode'), JSON.stringify({
+                    tracking: pkg.trackingNumber,
+                    name: pkg.packageName,
+                    status: pkg.deliveryStatus
+                }), { width: 150 });
+            } catch (e) {
+                console.log('QR error:', e);
+            }
+
+            // Action Buttons
+            renderActionButtons(pkg);
+
+            // Initialize Map with proper coordinates
+            const getCoords = async () => {
+                let originLat, originLng, destLat, destLng;
+                
+                if (pkg.originLat && pkg.originLng) {
+                    originLat = pkg.originLat;
+                    originLng = pkg.originLng;
+                } else {
+                    const originCoords = await getCoordinatesFromLocation(pkg.originCity || 'New York');
+                    originLat = originCoords.lat;
+                    originLng = originCoords.lng;
+                }
+                
+                if (pkg.destLat && pkg.destLng) {
+                    destLat = pkg.destLat;
+                    destLng = pkg.destLng;
+                } else {
+                    const destCoords = await getCoordinatesFromLocation(pkg.destinationCity || 'Los Angeles');
+                    destLat = destCoords.lat;
+                    destLng = destCoords.lng;
+                }
+                
+                initMap(originLat, originLng, destLat, destLng, 
+                       pkg.originCity || 'Origin', pkg.destinationCity || 'Destination',
+                       pkg.currentLocation);
+            };
+            
+            getCoords();
+
+            // Show package details
+            packageDetails.classList.add('active');
+            
+            // Hide loading
+            loadingOverlay.classList.remove('active');
+            
+            // Scroll to details
+            setTimeout(() => {
+                packageDetails.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+        }
+
+        function getStatusClass(status) {
+            const map = {
+                'Order Confirmed': 'status-confirmed',
+                'Processing': 'status-processing',
+                'Shipped/Dispatched': 'status-shipped',
+                'In Transit': 'status-transit',
+                'Out for Delivery': 'status-shipped',
+                'Delivered': 'status-delivered',
+                'Paused': 'status-paused',
+                'Canceled': 'status-paused'
+            };
+            return map[status] || 'status-confirmed';
+        }
+
+        function calculateProgress(status) {
+            const map = {
+                'Order Confirmed': 20,
+                'Processing': 40,
+                'Shipped/Dispatched': 60,
+                'In Transit': 75,
+                'Out for Delivery': 90,
+                'Delivered': 100,
+                'Paused': 30,
+                'Canceled': 0
+            };
+            return map[status] || 0;
+        }
+
+        function renderProgressMilestones(status, progress) {
+            const milestones = [
+                { label: 'Ordered', icon: 'fa-shopping-cart' },
+                { label: 'Processing', icon: 'fa-cogs' },
+                { label: 'Shipped', icon: 'fa-shipping-fast' },
+                { label: 'Transit', icon: 'fa-truck' },
+                { label: 'Delivered', icon: 'fa-home' }
+            ];
+
+            const milestonesHtml = milestones.map((m, i) => {
+                const milestoneProgress = i * 25;
+                let statusClass = '';
+                if (progress >= milestoneProgress + 12.5) {
+                    statusClass = 'completed';
+                } else if (progress >= milestoneProgress - 12.5) {
+                    statusClass = 'active';
+                }
+                return `
+                    <div class="milestone ${statusClass}">
+                        <div class="milestone-icon"><i class="fas ${m.icon}"></i></div>
+                        <div class="milestone-label">${m.label}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('progressMilestones').innerHTML = milestonesHtml;
+        }
+
+        function renderInfoGrid(pkg) {
+            const insuranceClass = pkg.isFragile ? 'status-confirmed' : 'status-paused';
+            const insuranceText = pkg.isFragile ? 'Yes' : 'No';
+
+            const infoCards = [
+                {
+                    title: 'Sender',
+                    icon: 'fa-user',
+                    rows: [
+                        { label: 'Name', value: pkg.senderName || 'N/A' },
+                        { label: 'Email', value: pkg.senderEmail || 'N/A' },
+                        { label: 'Phone', value: pkg.senderPhone || 'N/A' },
+                        { label: 'Address', value: pkg.senderAddress || 'N/A' }
+                    ]
+                },
+                {
+                    title: 'Receiver',
+                    icon: 'fa-user-check',
+                    rows: [
+                        { label: 'Name', value: pkg.receiverName || 'N/A' },
+                        { label: 'Email', value: pkg.receiverEmail || 'N/A' },
+                        { label: 'Phone', value: pkg.receiverPhone || 'N/A' },
+                        { label: 'Address', value: pkg.receiverAddress || 'N/A' }
+                    ]
+                },
+                {
+                    title: 'Package Details',
+                    icon: 'fa-box',
+                    rows: [
+                        { label: 'Dimensions', value: pkg.dimensions || 'N/A' },
+                        { label: 'Contents', value: pkg.contents || 'N/A' },
+                        { 
+                            label: 'Insurance', 
+                            value: `<span class="status-badge ${insuranceClass}" style="padding:0.2rem 0.8rem;">${insuranceText}</span>`,
+                            isHtml: true
+                        },
+                        { label: 'Insurance Amount', value: pkg.insuranceAmount ? `$${pkg.insuranceAmount}` : 'N/A' }
+                    ]
+                },
+                {
+                    title: 'Shipping',
+                    icon: 'fa-ship',
+                    rows: [
+                        { label: 'Method', value: pkg.deliveryMethod || 'N/A' },
+                        { label: 'Pickup Date', value: pkg.pickupDate || 'N/A' },
+                        { label: 'Expected Delivery', value: pkg.expectedDeliveryDate || 'N/A' },
+                        { label: 'Current Location', value: pkg.currentLocation || 'N/A' }
+                    ]
+                }
+            ];
+
+            const infoHtml = infoCards.map(card => {
+                const rows = card.rows.map(row => {
+                    if (row.isHtml) {
+                        return `
+                            <div class="info-row">
+                                <span class="info-label">${row.label}</span>
+                                <span class="info-value">${row.value}</span>
+                            </div>
+                        `;
+                    }
+                    return `
+                        <div class="info-row">
+                            <span class="info-label">${row.label}</span>
+                            <span class="info-value">${row.value}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="info-card">
+                        <h3><i class="fas ${card.icon}"></i> ${card.title}</h3>
+                        ${rows}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('infoGrid').innerHTML = infoHtml;
+        }
+
+        function renderTimeline(pkg) {
+            const history = pkg.statusHistory || [];
+            
+            if (history.length === 0) {
+                document.getElementById('timeline').innerHTML = `
+                    <div style="text-align: center; color: #5a6b8c; padding: 2rem;">
+                        <i class="fas fa-clock"></i>
+                        <p>No status history available</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const timelineHtml = history.sort((a, b) => 
+                new Date(b.timestamp) - new Date(a.timestamp)
+            ).map(item => {
+                const date = item.timestamp ? new Date(item.timestamp).toLocaleString() : 'Unknown date';
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">${item.status || 'Status Update'}</div>
+                            <div style="color: #5a6b8c; font-size: 0.9rem; margin-bottom: 0.5rem;">${item.message || ''}</div>
+                            <div style="display: flex; gap: 1rem; font-size: 0.8rem; color: #94a3b8;">
+                                <span><i class="fas fa-clock"></i> ${date}</span>
+                                <span><i class="fas fa-map-marker-alt"></i> ${item.location || 'Unknown'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('timeline').innerHTML = timelineHtml;
+        }
+
+        function renderActionButtons(pkg) {
+            const buttons = [];
+            
+            if (pkg.deliveryStatus === 'Paused') {
+                buttons.push(`
+                    <button class="action-btn pay" onclick="handlePayment('${pkg.id}')">
+                        <i class="fas fa-credit-card"></i> Pay Now
+                    </button>
+                `);
+            }
+
+            buttons.push(`
+                <button class="action-btn" onclick="contactSupport('${pkg.trackingNumber}')">
+                    <i class="fas fa-headset"></i> Contact Support
+                </button>
+                <button class="action-btn" onclick="sharePackage()">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            `);
+
+            document.getElementById('actionButtons').innerHTML = buttons.join('');
+        }
+
+        // Action Handlers
+        function handlePayment(packageId) {
+            alert('Payment portal will open. This is a demo.');
+        }
+
+        function contactSupport(trackingNumber) {
+            window.open('https://tawk.to/chat', '_blank');
+        }
+
+        function sharePackage() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Track My Package',
+                    text: `Track my package: ${currentPackage?.trackingNumber}`,
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert('Link copied to clipboard!');
+            }
+        }
+
+        // Make functions global
+        window.toggleMenu = toggleMenu;
+        window.closeMenu = closeMenu;
+        window.openLightbox = openLightbox;
+        window.handlePayment = handlePayment;
+        window.contactSupport = contactSupport;
+        window.sharePackage = sharePackage;
+    </script>
+
+
+</body>
+</html>

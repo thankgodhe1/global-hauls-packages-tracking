@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Send Parcel – Delivery Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    .form-page { padding: 20px 16px 40px; }
+    .form-page h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .form-page .sub { font-size: 14px; color: var(--gray-500); margin-bottom: 24px; }
+    .form-card-inner {
+      background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%; padding: 12px 14px; border: 1.5px solid var(--gray-200);
+      border-radius: 10px; font-size: 15px; outline: none; font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+    .form-group textarea { min-height: 90px; resize: vertical; }
+    .btn-submit {
+      width: 100%; padding: 14px; background: var(--primary); color: white;
+      border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px;
+    }
+    .btn-submit:disabled { opacity: 0.6; }
+    .success-msg {
+      background: #ecfdf5; color: #065f46; padding: 16px; border-radius: 12px;
+      text-align: center; display: none; margin-bottom: 16px;
+    }
+    .success-msg.show { display: block; }
+    .error-msg {
+      background: #fef2f2; color: #991b1b; padding: 12px; border-radius: 10px;
+      font-size: 14px; display: none; margin-bottom: 16px;
+    }
+    .error-msg.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="track-header">
+      <div class="top-bar">
+        <button class="back-btn" onclick="window.location.href='index.html'">←</button>
+        <div class="title">Send Parcel</div>
+        <div style="width:36px;"></div>
+      </div>
+    </header>
+
+    <div class="form-page">
+      <h1>Send a Parcel</h1>
+      <p class="sub">Fill in the details and our team will arrange the pickup.</p>
+
+      <div class="success-msg" id="successMsg">
+        ✅ Your send request has been received!<br>
+        <small>We will contact you to confirm pickup details.</small>
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+
+      <div class="form-card-inner">
+        <form id="sendForm">
+          <div class="form-group">
+            <label>Your Name *</label>
+            <input type="text" id="name" required placeholder="John Davis">
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="email" required placeholder="john@example.com">
+          </div>
+          <div class="form-group">
+            <label>Phone *</label>
+            <input type="tel" id="phone" required placeholder="+1 555 0100">
+          </div>
+          <div class="form-group">
+            <label>What are you sending? *</label>
+            <input type="text" id="productName" required placeholder="e.g. Documents, Clothes, Electronics">
+          </div>
+          <div class="form-group">
+            <label>Pickup Location (Origin) *</label>
+            <input type="text" id="origin" required placeholder="New York, USA">
+          </div>
+          <div class="form-group">
+            <label>Delivery Location (Destination) *</label>
+            <input type="text" id="destination" required placeholder="London, UK">
+          </div>
+          <div class="form-group">
+            <label>Approximate Weight</label>
+            <input type="text" id="weight" placeholder="e.g. 2 kg">
+          </div>
+          <div class="form-group">
+            <label>Additional Notes *</label>
+            <textarea id="message" required placeholder="Preferred pickup date, special instructions..."></textarea>
+          </div>
+          <button type="submit" class="btn-submit" id="submitBtn">Submit Send Request</button>
+        </form>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <div class="nav-item" onclick="window.location.href='index.html'"><span class="icon">🏠</span><span>Home</span></div>
+      <div class="nav-item" onclick="window.location.href='index.html'"><span class="icon">📍</span><span>Track</span></div>
+      <div class="nav-item active"><span class="icon">📤</span><span>Send</span></div>
+      <div class="nav-item" onclick="window.location.href='quote.html'"><span class="icon">📝</span><span>Quote</span></div>
+      <div class="nav-item" onclick="alert('More – Coming soon')"><span class="icon">☰</span><span>More</span></div>
+    </nav>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script>
+    document.getElementById('sendForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const success = document.getElementById('successMsg');
+      const error = document.getElementById('errorMsg');
+
+      success.classList.remove('show');
+      error.classList.remove('show');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      try {
+        const res = await axios.post(`${API_BASE_URL}/contact`, {
+          name: document.getElementById('name').value.trim(),
+          email: document.getElementById('email').value.trim(),
+          phone: document.getElementById('phone').value.trim(),
+          productName: document.getElementById('productName').value.trim(),
+          origin: document.getElementById('origin').value.trim(),
+          destination: document.getElementById('destination').value.trim(),
+          weight: document.getElementById('weight').value.trim(),
+          message: document.getElementById('message').value.trim(),
+          type: 'send',
+          subject: 'Send Parcel Request'
+        });
+
+        if (res.data.success) {
+          success.classList.add('show');
+          document.getElementById('sendForm').reset();
+        } else {
+          error.textContent = res.data.message || 'Something went wrong';
+          error.classList.add('show');
+        }
+      } catch (err) {
+        error.textContent = err.response?.data?.message || err.message || 'Network error';
+        error.classList.add('show');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Submit Send Request';
+      }
+    });
+  </script>
+</body>
+</html>

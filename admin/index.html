@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login – Delivery Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="icon">📦</div>
+        <h1>Delivery Platform</h1>
+        <p>Admin Panel Login</p>
+      </div>
+
+      <div id="alert" class="alert alert-error"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="admin@deliveryplatform.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="loginBtn">
+          <span id="btnText">Sign In</span>
+          <span id="btnSpinner" class="spinner" style="display:none;"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (isAuthenticated()) {
+      window.location.href = 'dashboard.html';
+    }
+
+    const form = document.getElementById('loginForm');
+    const alertEl = document.getElementById('alert');
+    const loginBtn = document.getElementById('loginBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        showAlert('Please enter both email and password.');
+        return;
+      }
+
+      setLoading(true);
+      hideAlert();
+
+      try {
+        const result = await api.login(email, password);
+
+        if (result.success && result.token) {
+          setToken(result.token);
+          setAdminUser(result.admin);
+          window.location.href = 'dashboard.html';
+        } else {
+          showAlert(result.message || 'Login failed.');
+        }
+      } catch (err) {
+        showAlert(err.message || 'Invalid email or password.');
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    function setLoading(loading) {
+      loginBtn.disabled = loading;
+      btnText.style.display = loading ? 'none' : 'inline';
+      btnSpinner.style.display = loading ? 'inline-block' : 'none';
+    }
+
+    function showAlert(msg) {
+      alertEl.textContent = msg;
+      alertEl.classList.add('show');
+    }
+
+    function hideAlert() {
+      alertEl.classList.remove('show');
+    }
+  </script>
+</body>
+</html>

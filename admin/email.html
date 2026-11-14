@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Email – Delivery Platform Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <style>
+    /* Page-only styles – do not override sidebar / layout from admin.css */
+    .email-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+    .email-status.ok { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .email-status.warn { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+    .email-status .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .form-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      max-width: 760px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 8px 0 14px;
+      padding-top: 8px;
+      border-top: 1px solid #f1f5f9;
+    }
+    .section-title:first-of-type { border-top: none; padding-top: 0; }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    .form-hint { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .optional-tag { font-weight: 500; color: #94a3b8; font-size: 11px; }
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    @media (min-width: 640px) {
+      .template-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .template-option {
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.15s, background 0.15s;
+      background: #fff;
+      user-select: none;
+      display: block;
+    }
+    .template-option:hover { border-color: #93c5fd; }
+    .template-option.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+    .template-option input { display: none; }
+    .template-option .tpl-icon { font-size: 22px; margin-bottom: 4px; }
+    .template-option .tpl-label { font-size: 12px; font-weight: 700; color: #0f172a; }
+    .template-option .tpl-desc { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .logo-preview {
+      margin-top: 10px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-preview.show { display: flex; }
+    .logo-preview img {
+      max-height: 48px;
+      max-width: 160px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .alert {
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert.show { display: block; }
+    .alert-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .alert-error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar (same structure/classes as dashboard & create) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="icon">📦</div>
+        <span>Delivery Admin</span>
+      </div>
+
+      <ul class="nav-menu">
+        <li><a href="dashboard.html"><span class="icon">📊</span> Dashboard</a></li>
+        <li><a href="create.html"><span class="icon">➕</span> Create Delivery</a></li>
+        <li><a href="email.html" class="active"><span class="icon">✉️</span> Send Email</a></li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="admin-info">
+          <div class="admin-avatar" id="adminAvatar">A</div>
+          <div>
+            <div class="name" id="adminName">Admin</div>
+            <div class="role" id="adminRole">Administrator</div>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="logout()">Logout</button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main-content">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+          <div>
+            <h1>Send Email</h1>
+            <p>Zoho REST API · choose a template · optional logo &amp; footer</p>
+          </div>
+        </div>
+        <a href="dashboard.html" class="btn btn-secondary" style="width:auto;">← Dashboard</a>
+      </div>
+
+      <div id="emailStatusBox" class="email-status warn">
+        <span class="dot"></span>
+        <span id="emailStatusText">Checking email service…</span>
+      </div>
+
+      <div id="alertSuccess" class="alert alert-success"></div>
+      <div id="alertError" class="alert alert-error"></div>
+
+      <div class="form-card">
+        <form id="emailForm">
+          <div class="section-title">Recipient</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="toEmail">Recipient Email *</label>
+              <input type="email" id="toEmail" required placeholder="customer@example.com" autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label for="toName">Recipient Name <span class="optional-tag">optional</span></label>
+              <input type="text" id="toName" placeholder="John Davis">
+            </div>
+          </div>
+
+          <div class="section-title">Template</div>
+          <div class="form-group">
+            <div class="template-grid" id="templateGrid">
+              <label class="template-option active" data-value="announcement">
+                <input type="radio" name="template" value="announcement" checked>
+                <div class="tpl-icon">📢</div>
+                <div class="tpl-label">Announcement</div>
+                <div class="tpl-desc">News &amp; updates</div>
+              </label>
+              <label class="template-option" data-value="account">
+                <input type="radio" name="template" value="account">
+                <div class="tpl-icon">👤</div>
+                <div class="tpl-label">Account Notice</div>
+                <div class="tpl-desc">Account messages</div>
+              </label>
+              <label class="template-option" data-value="promotional">
+                <input type="radio" name="template" value="promotional">
+                <div class="tpl-icon">🎁</div>
+                <div class="tpl-label">Promotional</div>
+                <div class="tpl-desc">Offers &amp; promos</div>
+              </label>
+              <label class="template-option" data-value="shipment">
+                <input type="radio" name="template" value="shipment">
+                <div class="tpl-icon">🚚</div>
+                <div class="tpl-label">Shipment Update</div>
+                <div class="tpl-desc">Tracking updates</div>
+              </label>
+            </div>
+          </div>
+
+          <div class="section-title">Content</div>
+          <div class="form-group">
+            <label for="subject">Subject *</label>
+            <input type="text" id="subject" required placeholder="Shipment update">
+          </div>
+          <div class="form-group">
+            <label for="message">Message *</label>
+            <textarea id="message" required placeholder="Write your message here..." rows="6"></textarea>
+            <div class="form-hint">Line breaks are preserved in the email body.</div>
+          </div>
+
+          <div class="section-title">Branding <span class="optional-tag">all optional</span></div>
+          <div class="form-group">
+            <label for="logoFile">Logo image <span class="optional-tag">optional upload</span></label>
+            <input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp,image/gif">
+            <div class="form-hint">JPEG, PNG, WebP or GIF · max 5MB. Uploaded via Cloudinary when configured.</div>
+            <div class="logo-preview" id="logoPreview">
+              <img id="logoPreviewImg" alt="Logo preview">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="clearLogo()">Remove</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="logoUrl">Or logo URL <span class="optional-tag">optional</span></label>
+            <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
+            <div class="form-hint">Used if no file is uploaded.</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="footerBrand">Footer brand name <span class="optional-tag">optional</span></label>
+              <input type="text" id="footerBrand" placeholder="Delivery Platform">
+            </div>
+            <div class="form-group">
+              <label for="footerSupportEmail">Footer support email <span class="optional-tag">optional</span></label>
+              <input type="email" id="footerSupportEmail" placeholder="support@yourdomain.com">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="footerText">Footer text <span class="optional-tag">optional</span></label>
+            <input type="text" id="footerText" placeholder="This is an automated message. Please do not reply directly.">
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="sendBtn">
+              <span id="btnLabel">Send Email</span>
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="resetForm()">Clear</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    function getToken() {
+      return localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
+    }
+    function clearToken() {
+      localStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      sessionStorage.removeItem('adminUser');
+    }
+    function logout() {
+      clearToken();
+      window.location.href = 'index.html';
+    }
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+    function requireAuth() {
+      if (!getToken()) {
+        window.location.href = 'index.html';
+        return false;
+      }
+      return true;
+    }
+
+    function showAlert(type, text) {
+      var success = document.getElementById('alertSuccess');
+      var error = document.getElementById('alertError');
+      success.classList.remove('show');
+      error.classList.remove('show');
+      if (type === 'success') {
+        success.textContent = text;
+        success.classList.add('show');
+      } else {
+        error.textContent = text;
+        error.classList.add('show');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function clearLogo() {
+      document.getElementById('logoFile').value = '';
+      document.getElementById('logoPreview').classList.remove('show');
+      document.getElementById('logoPreviewImg').removeAttribute('src');
+    }
+
+    function resetForm() {
+      document.getElementById('emailForm').reset();
+      clearLogo();
+      document.querySelectorAll('.template-option').forEach(function (el) {
+        el.classList.remove('active');
+      });
+      var first = document.querySelector('.template-option[data-value="announcement"]');
+      if (first) {
+        first.classList.add('active');
+        first.querySelector('input').checked = true;
+      }
+      document.getElementById('alertSuccess').classList.remove('show');
+      document.getElementById('alertError').classList.remove('show');
+    }
+
+    document.querySelectorAll('.template-option').forEach(function (el) {
+      el.addEventListener('click', function () {
+        document.querySelectorAll('.template-option').forEach(function (o) {
+          o.classList.remove('active');
+        });
+        el.classList.add('active');
+        el.querySelector('input').checked = true;
+      });
+    });
+
+    document.getElementById('logoFile').addEventListener('change', function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) {
+        clearLogo();
+        return;
+      }
+      var url = URL.createObjectURL(file);
+      document.getElementById('logoPreviewImg').src = url;
+      document.getElementById('logoPreview').classList.add('show');
+    });
+
+    async function loadAdmin() {
+      try {
+        var res = await api.getMe();
+        var admin = res.data || res.admin || res;
+        var name = admin.name || admin.email || 'Admin';
+        document.getElementById('adminName').textContent = name;
+        document.getElementById('adminAvatar').textContent = (name[0] || 'A').toUpperCase();
+        if (admin.role) document.getElementById('adminRole').textContent = admin.role;
+      } catch (e) {
+        console.warn('Could not load admin profile', e);
+      }
+    }
+
+    async function loadEmailStatus() {
+      var box = document.getElementById('emailStatusBox');
+      var text = document.getElementById('emailStatusText');
+      try {
+        var res = await api.getEmailStatus();
+        var data = res.data || res;
+        if (data.configured) {
+          box.className = 'email-status ok';
+          text.textContent = 'Zoho email ready · From: ' + (data.fromEmail || 'configured') +
+            (data.fromName ? ' (' + data.fromName + ')' : '');
+        } else {
+          box.className = 'email-status warn';
+          text.textContent = 'Zoho not fully configured. Set ZOHO_CPAAS_API_KEY and ZOHO_FROM_EMAIL on the backend.';
+        }
+      } catch (e) {
+        box.className = 'email-status warn';
+        text.textContent = 'Could not verify email service status.';
+      }
+    }
+
+    document.getElementById('emailForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      var to = document.getElementById('toEmail').value.trim();
+      var toName = document.getElementById('toName').value.trim();
+      var subject = document.getElementById('subject').value.trim();
+      var message = document.getElementById('message').value.trim();
+      var templateInput = document.querySelector('input[name="template"]:checked');
+      var template = templateInput ? templateInput.value : 'announcement';
+      var logoUrl = document.getElementById('logoUrl').value.trim();
+      var footerBrand = document.getElementById('footerBrand').value.trim();
+      var footerText = document.getElementById('footerText').value.trim();
+      var footerSupportEmail = document.getElementById('footerSupportEmail').value.trim();
+      var logoFile = document.getElementById('logoFile').files[0];
+
+      if (!to || !subject || !message) {
+        showAlert('error', 'Recipient, subject and message are required.');
+        return;
+      }
+
+      var btn = document.getElementById('sendBtn');
+      var label = document.getElementById('btnLabel');
+      btn.disabled = true;
+      label.innerHTML = '<span class="spinner"></span>Sending…';
+
+      try {
+        var res;
+        if (logoFile) {
+          var fd = new FormData();
+          fd.append('to', to);
+          if (toName) fd.append('toName', toName);
+          fd.append('subject', subject);
+          fd.append('message', message);
+          fd.append('template', template);
+          if (logoUrl) fd.append('logoUrl', logoUrl);
+          if (footerBrand) fd.append('footerBrand', footerBrand);
+          if (footerText) fd.append('footerText', footerText);
+          if (footerSupportEmail) fd.append('footerSupportEmail', footerSupportEmail);
+          fd.append('logo', logoFile);
+          res = await api.sendEmail(fd, true);
+        } else {
+          res = await api.sendEmail({
+            to: to,
+            toName: toName || undefined,
+            subject: subject,
+            message: message,
+            template: template,
+            logoUrl: logoUrl || undefined,
+            footerBrand: footerBrand || undefined,
+            footerText: footerText || undefined,
+            footerSupportEmail: footerSupportEmail || undefined
+          });
+        }
+        showAlert('success', res.message || 'Email sent successfully.');
+      } catch (err) {
+        showAlert('error', err.message || 'Failed to send email.');
+      } finally {
+        btn.disabled = false;
+        label.textContent = 'Send Email';
+      }
+    });
+
+    (function prefillFromQuery() {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('to')) document.getElementById('toEmail').value = params.get('to');
+      if (params.get('name')) document.getElementById('toName').value = params.get('name');
+      if (params.get('subject')) document.getElementById('subject').value = params.get('subject');
+      if (params.get('template')) {
+        var t = params.get('template');
+        var opt = document.querySelector('.template-option[data-value="' + t + '"]');
+        if (opt) opt.click();
+      }
+    })();
+
+    if (requireAuth()) {
+      loadAdmin();
+      loadEmailStatus();
+    }
+  </script>
+</body>
+</html>
