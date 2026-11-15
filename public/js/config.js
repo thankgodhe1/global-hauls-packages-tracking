@@ -1,5 +1,5 @@
-const API_BASE_URL = 'https://global-haul-backends.onrender.com/api';
-const SOCKET_URL = 'https://global-haul-backends.onrender.com';
+const API_BASE_URL = 'https://global-haul-backend.onrender.com/api';
+const SOCKET_URL = 'https://global-haul-backend.onrender.com';
 
 const STATUS_PROGRESS = {
   'Processing': 5,
@@ -14,7 +14,8 @@ const STATUS_PROGRESS = {
 
 const TRANSPORT_CONFIG = {
   Air: {
-    icon: '✈️',
+    icon: '<i class="fa-solid fa-plane"></i>',
+    iconClass: 'fa-solid fa-plane',
     label: 'Air Freight',
     color: '#2563eb',
     routeColor: '#3b82f6',
@@ -24,7 +25,8 @@ const TRANSPORT_CONFIG = {
     markerBg: '#2563eb'
   },
   Sea: {
-    icon: '🚢',
+    icon: '<i class="fa-solid fa-ship"></i>',
+    iconClass: 'fa-solid fa-ship',
     label: 'Sea Freight',
     color: '#0ea5e9',
     routeColor: '#0284c7',
@@ -34,7 +36,8 @@ const TRANSPORT_CONFIG = {
     markerBg: '#0ea5e9'
   },
   Land: {
-    icon: '🚚',
+    icon: '<i class="fa-solid fa-truck"></i>',
+    iconClass: 'fa-solid fa-truck',
     label: 'Land / Truck',
     color: '#f59e0b',
     routeColor: '#d97706',
@@ -44,7 +47,8 @@ const TRANSPORT_CONFIG = {
     markerBg: '#f59e0b'
   },
   Rail: {
-    icon: '🚆',
+    icon: '<i class="fa-solid fa-train"></i>',
+    iconClass: 'fa-solid fa-train',
     label: 'Rail',
     color: '#8b5cf6',
     routeColor: '#7c3aed',
@@ -54,7 +58,8 @@ const TRANSPORT_CONFIG = {
     markerBg: '#8b5cf6'
   },
   Express: {
-    icon: '⚡',
+    icon: '<i class="fa-solid fa-bolt"></i>',
+    iconClass: 'fa-solid fa-bolt',
     label: 'Express',
     color: '#ef4444',
     routeColor: '#dc2626',

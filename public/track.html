@@ -7,7 +7,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
   <link rel="stylesheet" href="css/app.css">
+  <style>
+    .bottom-nav .nav-item .icon {
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+    }
+    .bottom-nav .nav-item .icon i { line-height: 1; }
+    .back-btn i, .header-right .icon-btn i { font-size: 15px; }
+    .map-ctrl-btn i { font-size: 14px; }
+    .img-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #64748b;
+    }
+    #transportIcon i, #progressIcon i { font-size: 14px; }
+    .custom-marker i { color: #fff; font-size: 13px; }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
@@ -17,16 +39,16 @@
     <!-- Header -->
     <header class="track-header">
       <div class="top-bar">
-        <button class="back-btn" onclick="window.location.href='dashboard.html'" title="Back to dashboard">←</button>
+        <button class="back-btn" onclick="window.location.href='dashboard.html'" title="Back to dashboard"><i class="fa-solid fa-arrow-left"></i></button>
         <div class="title">Tracking Details</div>
         <div class="header-right">
-          <button class="icon-btn" style="background:var(--gray-100);color:var(--gray-700);width:36px;height:36px;border-radius:50%;border:none;font-size:15px;cursor:pointer;" title="Share" onclick="shareTracking()">↗</button>
-          <button class="icon-btn" style="background:var(--gray-100);color:var(--gray-700);width:36px;height:36px;border-radius:50%;border:none;font-size:15px;cursor:pointer;" title="More">⋯</button>
+          <button class="icon-btn" style="background:var(--gray-100);color:var(--gray-700);width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;" title="Share" onclick="shareTracking()"><i class="fa-solid fa-share-nodes"></i></button>
+          <button class="icon-btn" style="background:var(--gray-100);color:var(--gray-700);width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;" title="More"><i class="fa-solid fa-ellipsis"></i></button>
         </div>
       </div>
 
       <div class="track-product" id="productHeader">
-        <div class="img-placeholder" id="productImg">📦</div>
+        <div class="img-placeholder" id="productImg"><i class="fa-solid fa-box"></i></div>
         <div class="info">
           <div class="tn" id="displayTn">—</div>
           <div class="name" id="displayProduct">Loading...</div>
@@ -41,7 +63,7 @@
         <div class="city" id="originCity">—</div>
         <div class="date" id="originDate">—</div>
       </div>
-      <div class="route-arrow">→</div>
+      <div class="route-arrow"><i class="fa-solid fa-arrow-right"></i></div>
       <div class="route-point">
         <div class="city" id="destCity">—</div>
         <div class="date" id="destDate">—</div>
@@ -67,7 +89,7 @@
     <div class="tab-content active" id="tab-map">
       <!-- Transport mode indicator -->
       <div class="transport-badge" id="transportBadge" style="display:none;">
-        <span class="icon" id="transportIcon">✈️</span>
+        <span class="icon" id="transportIcon"><i class="fa-solid fa-plane"></i></span>
         <span id="transportLabel">Air Freight</span>
         <span class="live-indicator" id="liveIndicator" style="margin-left:8px;display:none;">
           <span class="dot"></span> LIVE
@@ -77,8 +99,8 @@
       <div class="map-container">
         <div id="map"></div>
         <div class="map-controls">
-          <button class="map-ctrl-btn" id="btnFollow" title="Follow current location" onclick="toggleFollow()">📍</button>
-          <button class="map-ctrl-btn" id="btnFit" title="Fit full route" onclick="fitFullRoute()">🗺️</button>
+          <button class="map-ctrl-btn" id="btnFollow" title="Follow current location" onclick="toggleFollow()"><i class="fa-solid fa-location-crosshairs"></i></button>
+          <button class="map-ctrl-btn" id="btnFit" title="Fit full route" onclick="fitFullRoute()"><i class="fa-solid fa-map"></i></button>
         </div>
       </div>
 
@@ -91,7 +113,7 @@
       <div class="progress-card" id="progressCard">
         <div class="top">
           <div class="status-label">
-            <span id="progressIcon">✈️</span>
+            <span id="progressIcon"><i class="fa-solid fa-plane"></i></span>
             <span id="progressStatus">In Transit</span>
           </div>
           <div class="percent" id="progressPercent">60%</div>
@@ -150,23 +172,23 @@
     <!-- Bottom Nav -->
     <nav class="bottom-nav">
       <div class="nav-item" onclick="window.location.href='dashboard.html'">
-        <span class="icon">🏠</span>
+        <span class="icon"><i class="fa-solid fa-house"></i></span>
         <span>Home</span>
       </div>
       <div class="nav-item active">
-        <span class="icon">📍</span>
+        <span class="icon"><i class="fa-solid fa-location-dot"></i></span>
         <span>Track</span>
       </div>
       <div class="nav-item" style="cursor:default;opacity:0.7;">
-        <span class="icon">📤</span>
+        <span class="icon"><i class="fa-solid fa-box"></i></span>
         <span>Send</span>
       </div>
       <div class="nav-item" style="cursor:default;opacity:0.7;">
-        <span class="icon">📋</span>
+        <span class="icon"><i class="fa-solid fa-clipboard-list"></i></span>
         <span>Shipments</span>
       </div>
       <div class="nav-item" style="cursor:default;opacity:0.7;">
-        <span class="icon">☰</span>
+        <span class="icon"><i class="fa-solid fa-bars"></i></span>
         <span>More</span>
       </div>
     </nav>
@@ -265,7 +287,7 @@
       // Transport badge
       const badge = document.getElementById('transportBadge');
       badge.style.display = 'inline-flex';
-      document.getElementById('transportIcon').textContent = modeCfg.icon;
+      document.getElementById('transportIcon').innerHTML = modeCfg.icon;
       document.getElementById('transportLabel').textContent = modeCfg.label;
 
       // Progress
@@ -273,7 +295,7 @@
       document.getElementById('progressStatus').textContent = t.status;
       document.getElementById('progressPercent').textContent = pct + '%';
       document.getElementById('progressBar').style.width = pct + '%';
-      document.getElementById('progressIcon').textContent = modeCfg.icon;
+      document.getElementById('progressIcon').innerHTML = modeCfg.icon;
 
       // Color progress by mode
       const progressCard = document.getElementById('progressCard');
@@ -555,7 +577,7 @@
           trackingData = updated;
           renderAll(updated);
           updateMap(updated);
-          showToast('📍 Location / status updated live');
+          showToast('Location / status updated live');
         }
       });
     }
