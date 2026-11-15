@@ -1,5 +1,5 @@
-const API_BASE_URL = 'https://global-haul-backend.onrender.com/api';
-const SOCKET_URL = 'https://global-haul-backend.onrender.com';
+const API_BASE_URL = 'https://global-haul-backends.onrender.com/api';
+const SOCKET_URL = 'https://global-haul-backends.onrender.com';
 
 const STATUS_PROGRESS = {
   'Processing': 5,
